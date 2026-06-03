@@ -160,8 +160,22 @@ export function ParameterForm() {
           hint="Fixed expenses growing with CPI (rent, food, utilities, insurance)" />
         <SliderInput label="Discretionary Scale (% of income above $100K)" value={inputs.discretionaryPct} min={0} max={0.30} step={0.01}
           format={v => fmtPct(v)} onChange={v => setInputs({ discretionaryPct: v })} />
-        <SliderInput label="Retirement Spending (% of pre-retirement)" value={inputs.retirementSpendingPct} min={0.40} max={1.0} step={0.05}
-          format={v => fmtPct(v)} onChange={v => setInputs({ retirementSpendingPct: v })} />
+        <div className="text-slate-400 text-xs font-medium pt-1">Retirement Spending — Smile Curve</div>
+        <SliderInput label="Active Phase (age retire → +10 yrs)" value={inputs.retirementSpendingEarly} min={0.40} max={1.20} step={0.05}
+          format={v => fmtPct(v)} onChange={v => setInputs({ retirementSpendingEarly: v })}
+          hint="Travel, hobbies — typically highest spending" />
+        <SliderInput label="Quiet Phase (+10 → +20 yrs)" value={inputs.retirementSpendingMid} min={0.30} max={1.0} step={0.05}
+          format={v => fmtPct(v)} onChange={v => setInputs({ retirementSpendingMid: v })}
+          hint="Slower pace, lower discretionary spend" />
+        <SliderInput label="Late Phase (+20 yrs onward)" value={inputs.retirementSpendingLate} min={0.40} max={1.20} step={0.05}
+          format={v => fmtPct(v)} onChange={v => setInputs({ retirementSpendingLate: v })}
+          hint="Healthcare dominates — often rises again" />
+        <SliderInput label="Healthcare (pre-Medicare, annual)" value={inputs.healthcarePreMedicare} min={0} max={40000} step={1000}
+          format={v => fmtCurrency(v)} onChange={v => setInputs({ healthcarePreMedicare: v })}
+          hint="ACA marketplace cost if retiring before 65" />
+        <SliderInput label="Healthcare (post-Medicare, annual)" value={inputs.healthcarePostMedicare} min={0} max={20000} step={500}
+          format={v => fmtCurrency(v)} onChange={v => setInputs({ healthcarePostMedicare: v })}
+          hint="Medicare premiums + supplemental coverage" />
       </Section>
 
       <Section title="Asset Allocation Glide Path" defaultOpen={false}>
@@ -188,6 +202,41 @@ export function ParameterForm() {
             <SliderInput label="Benefit (% of final salary)" value={inputs.ssBenefitPct} min={0.15} max={0.60} step={0.01}
               format={v => fmtPct(v)} onChange={v => setInputs({ ssBenefitPct: v })} />
           </>
+        )}
+      </Section>
+
+      <Section title="Bridge / Part-Time Income" defaultOpen={false}>
+        <SliderInput label="Annual Bridge Income" value={inputs.bridgeIncomeAmount} min={0} max={150000} step={2500}
+          format={v => fmtCurrency(v)} onChange={v => setInputs({ bridgeIncomeAmount: v })}
+          hint="Part-time or consulting income in early retirement (post-tax reduced rate applied)" />
+        {inputs.bridgeIncomeAmount > 0 && (
+          <>
+            <SliderInput label="Bridge Income Start Age" value={inputs.bridgeIncomeStartAge} min={45} max={75} step={1}
+              format={v => String(Math.round(v))} onChange={v => setInputs({ bridgeIncomeStartAge: Math.round(v) })} />
+            <SliderInput label="Bridge Income End Age" value={inputs.bridgeIncomeEndAge} min={50} max={80} step={1}
+              format={v => String(Math.round(v))} onChange={v => setInputs({ bridgeIncomeEndAge: Math.round(v) })} />
+          </>
+        )}
+      </Section>
+
+      <Section title="Required Minimum Distributions (RMDs)" defaultOpen={false}>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-slate-300 text-sm">Enable RMD Modeling</label>
+            <div className="text-slate-500 text-xs mt-0.5">IRS forces 401(k) withdrawals starting at age 73</div>
+          </div>
+          <button
+            onClick={() => setInputs({ rmdEnabled: !inputs.rmdEnabled })}
+            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.rmdEnabled ? 'bg-teal-600' : 'bg-slate-600'}`}
+          >
+            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inputs.rmdEnabled ? 'left-6' : 'left-1'}`} />
+          </button>
+        </div>
+        {inputs.rmdEnabled && (
+          <div className="bg-slate-700/50 rounded-lg p-3 text-xs text-slate-400">
+            RMD = 401(k) balance ÷ IRS life expectancy factor. Withdrawals are taxed as ordinary income.
+            Any surplus beyond spending needs is reinvested in taxable brokerage.
+          </div>
         )}
       </Section>
     </div>

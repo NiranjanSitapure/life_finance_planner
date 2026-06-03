@@ -15,6 +15,14 @@ export interface Debt {
   payoffAge: number
 }
 
+export interface IncomeEvent {
+  id: string
+  age: number
+  label: string
+  amount: number  // gross amount (pre-tax)
+  taxable: boolean
+}
+
 export interface ModelInputs {
   // Personal
   currentAge: number
@@ -62,7 +70,22 @@ export interface ModelInputs {
   // Expenses
   baseAnnualExpenses: number
   discretionaryPct: number
-  retirementSpendingPct: number
+  // Retirement spending smile curve
+  retirementSpendingEarly: number   // ages retirementAge to retirementAge+10
+  retirementSpendingMid: number     // ages retirementAge+10 to retirementAge+20
+  retirementSpendingLate: number    // ages retirementAge+20+
+
+  // Healthcare
+  healthcarePreMedicare: number     // annual cost if retiring before 65
+  healthcarePostMedicare: number    // annual Medicare + supplemental cost
+
+  // Bridge income
+  bridgeIncomeAmount: number
+  bridgeIncomeStartAge: number
+  bridgeIncomeEndAge: number
+
+  // RMDs
+  rmdEnabled: boolean
 
   // Asset allocation glide path
   stockAllocNow: number
@@ -78,6 +101,7 @@ export interface ModelInputs {
 
   // Debts
   debts: Debt[]
+  incomeEvents: IncomeEvent[]
 }
 
 export interface ProjectionRow {
@@ -96,6 +120,10 @@ export interface ProjectionRow {
   k401EmployerMatch: number
   hsa: number
   socialSecurityIncome: number
+  healthcareCost: number
+  bridgeIncome: number
+  rmdAmount: number
+  windfall: number
   netWorth: number
   realNetWorth: number
   stockAllocationPct: number
@@ -120,6 +148,8 @@ export interface ModelSummary {
   totalEmployerMatch: number
   totalCapGainsTax: number
   totalSocialSecurity: number
+  totalRMDTaxPaid: number
+  breakEvenAge: number | null
   yearsToRetirement: number
   rothPhaseOutWarning: boolean
   deficitYears: number[]

@@ -99,6 +99,18 @@ export function SummaryCards() {
         sub="Lifetime 401(k) match received"
         accent="text-pink-400"
       />
+      <Card
+        title="Break-Even Age"
+        value={fmtAge(summary.breakEvenAge)}
+        sub="When portfolio returns cover all expenses"
+        accent="text-cyan-400"
+      />
+      <Card
+        title="RMD Tax (lifetime)"
+        value={fmtCurrency(summary.totalRMDTaxPaid, true)}
+        sub="Estimated tax on forced 401(k) withdrawals"
+        accent="text-red-400"
+      />
       <FIREBar />
     </div>
   )

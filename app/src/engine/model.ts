@@ -1,8 +1,15 @@
 import type { ModelInputs, ProjectionRow, ModelSummary } from './types'
 
-// IRS 2024 Roth IRA phase-out thresholds
 const ROTH_PHASEOUT_SINGLE = 146000
 const ROTH_PHASEOUT_MARRIED = 230000
+
+// IRS Uniform Lifetime Table (age -> distribution period)
+const IRS_RMD_TABLE: Record<number, number> = {
+  72: 27.4, 73: 26.5, 74: 25.5, 75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0,
+  79: 21.1, 80: 20.2, 81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0,
+  86: 15.2, 87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8,
+  93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3, 99: 6.8, 100: 6.4,
+}
 
 function rothPhaseOut(income: number, status: 'single' | 'married'): boolean {
   const limit = status === 'single' ? ROTH_PHASEOUT_SINGLE : ROTH_PHASEOUT_MARRIED
@@ -10,15 +17,22 @@ function rothPhaseOut(income: number, status: 'single' | 'married'): boolean {
 }
 
 function stockAllocForAge(
-  age: number,
-  currentAge: number,
-  retirementAge: number,
-  allocNow: number,
-  allocAtRetirement: number
+  age: number, currentAge: number, retirementAge: number,
+  allocNow: number, allocAtRetirement: number
 ): number {
   if (age >= retirementAge) return allocAtRetirement
   const t = (age - currentAge) / (retirementAge - currentAge)
   return allocNow - t * (allocNow - allocAtRetirement)
+}
+
+function retirementSpendingMultiplier(
+  age: number, retirementAge: number,
+  early: number, mid: number, late: number
+): number {
+  const yearsIn = age - retirementAge
+  if (yearsIn < 10) return early
+  if (yearsIn < 20) return mid
+  return late
 }
 
 export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; summary: ModelSummary } {
@@ -29,10 +43,14 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
     k401Annual, employerMatchPct, employerMatchCap, iraAnnual, hsaAnnual,
     backdoorRoth, stockReturn, bondReturn, cashReturn, hsaReturn,
     inflation, effectiveTaxRate, capitalGainsTaxRate, stateTaxRate,
-    baseAnnualExpenses, discretionaryPct, retirementSpendingPct,
+    baseAnnualExpenses, discretionaryPct,
+    retirementSpendingEarly, retirementSpendingMid, retirementSpendingLate,
+    healthcarePreMedicare, healthcarePostMedicare,
+    bridgeIncomeAmount, bridgeIncomeStartAge, bridgeIncomeEndAge,
+    rmdEnabled,
     stockAllocNow, stockAllocAtRetirement,
     socialSecurityEnabled, ssClaimingAge, ssBenefitPct,
-    milestones, debts,
+    milestones, debts, incomeEvents,
   } = inputs
 
   const HORIZON = Math.max(60, 90 - currentAge + 2)
@@ -50,7 +68,6 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
   let k401 = inputs.k401
   let hsa = inputs.hsa
 
-  // Track cost basis for capital gains (simplified: track total invested)
   let stockCostBasis = inputs.stocks
   let bondCostBasis = inputs.bonds
 
@@ -59,16 +76,28 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
   let cumulativeEmployerMatch = 0
   let cumulativeCapGainsTax = 0
   let cumulativeSocialSecurity = 0
+  let cumulativeRMDTax = 0
 
+  // Build milestone map with inflation-adjusted costs
   const milestoneMap = new Map<number, { cost: number; label: string }>()
   for (const m of milestones) {
     if (!m.enabled) continue
     const yearsOut = m.age - currentAge
-    const inflatedCost = m.cost * Math.pow(1 + inflation, Math.max(0, yearsOut))
-    milestoneMap.set(m.age, { cost: inflatedCost, label: m.label })
+    milestoneMap.set(m.age, {
+      cost: m.cost * Math.pow(1 + inflation, Math.max(0, yearsOut)),
+      label: m.label,
+    })
   }
 
-  const fireTarget = (baseAnnualExpenses * retirementSpendingPct) / 0.04
+  // Build income events map (multiple events can share an age)
+  const incomeEventMap = new Map<number, { amount: number; label: string; taxable: boolean }[]>()
+  for (const ev of incomeEvents) {
+    if (!incomeEventMap.has(ev.age)) incomeEventMap.set(ev.age, [])
+    incomeEventMap.get(ev.age)!.push({ amount: ev.amount, label: ev.label, taxable: ev.taxable })
+  }
+
+  // FIRE target based on early retirement spending (most conservative)
+  const fireTarget = (baseAnnualExpenses * retirementSpendingEarly) / 0.04
 
   for (let i = 0; i < HORIZON; i++) {
     const isRetired = age > retirementAge
@@ -83,16 +112,35 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
     let debtPayments = 0
     let capGainsTaxPaid = 0
     let ssIncome = 0
+    let healthcareCost = 0
+    let bridgeIncome = 0
+    let rmdAmount = 0
+    let windfall = 0
 
-    // Living expenses
-    const sideIncome =
-      age >= sideIncomeStartAge && age <= sideIncomeEndAge ? sideIncomeAmount : 0
+    const sideIncome = age >= sideIncomeStartAge && age <= sideIncomeEndAge ? sideIncomeAmount : 0
 
+    // --- Healthcare cost ---
+    if (isRetired) {
+      healthcareCost = age < 65
+        ? healthcarePreMedicare * Math.pow(1 + inflation, age - retirementAge)
+        : healthcarePostMedicare * Math.pow(1 + inflation, age - retirementAge)
+    }
+
+    // --- Bridge income (post-tax, part-time work in early retirement) ---
+    if (isRetired && bridgeIncomeAmount > 0 && age >= bridgeIncomeStartAge && age <= bridgeIncomeEndAge) {
+      bridgeIncome = bridgeIncomeAmount * (1 - (effectiveTaxRate * 0.5)) // lighter tax on part-time
+    }
+
+    // --- Living expenses ---
     let livingExp: number
     if (isRetired) {
+      const smileMult = retirementSpendingMultiplier(
+        age, retirementAge,
+        retirementSpendingEarly, retirementSpendingMid, retirementSpendingLate
+      )
       livingExp =
         lastPreRetirementExpenses *
-        retirementSpendingPct *
+        smileMult *
         Math.pow(1 + inflation, age - retirementAge)
     } else {
       const baseCPI = baseAnnualExpenses * Math.pow(1 + inflation, yearsElapsed)
@@ -101,10 +149,43 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       lastPreRetirementExpenses = livingExp
     }
 
-    // Social Security
+    // --- Social Security (with COLA: SS grows with inflation) ---
     if (socialSecurityEnabled && age >= ssClaimingAge) {
-      ssIncome = finalPreRetirementSalary * ssBenefitPct
+      const yearsOfCOLA = age - ssClaimingAge
+      ssIncome = finalPreRetirementSalary * ssBenefitPct * Math.pow(1 + inflation, yearsOfCOLA)
       cumulativeSocialSecurity += ssIncome
+    }
+
+    // --- RMDs (age 73+) ---
+    if (isRetired && rmdEnabled && age >= 73 && k401 > 0) {
+      const period = IRS_RMD_TABLE[Math.min(age, 100)] ?? 6.4
+      rmdAmount = k401 / period
+      // Force withdrawal from 401k, apply income tax
+      const rmdTax = rmdAmount * (effectiveTaxRate + stateTaxRate)
+      cumulativeRMDTax += rmdTax
+      k401 -= rmdAmount
+      const afterTaxRMD = rmdAmount - rmdTax
+      // If after-tax RMD exceeds net drawdown need, invest surplus in stocks
+      const totalNeed = Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome)
+      if (afterTaxRMD > totalNeed) {
+        const surplus = afterTaxRMD - totalNeed
+        stocks += surplus
+        stockCostBasis += surplus
+        cash += totalNeed
+      } else {
+        cash += afterTaxRMD
+      }
+    }
+
+    // --- Income events (windfalls) ---
+    if (incomeEventMap.has(age)) {
+      for (const ev of incomeEventMap.get(age)!) {
+        const afterTax = ev.taxable
+          ? ev.amount * (1 - (effectiveTaxRate + stateTaxRate))
+          : ev.amount
+        windfall += afterTax
+        cash += afterTax
+      }
     }
 
     if (!isRetired) {
@@ -116,32 +197,21 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       const incomeTax = taxableIncome * totalTaxRate
       postTaxIncome = taxableIncome - incomeTax
 
-      // Roth eligibility
       const phaseOut = rothPhaseOut(taxableIncome, filingStatus)
-      if (!phaseOut || backdoorRoth) {
-        toRoth = iraAnnual
-      }
-
-      // HSA
+      if (!phaseOut || backdoorRoth) toRoth = iraAnnual
       toHSA = hsaAnnual
 
-      // Debt payments
       for (const d of debts) {
-        if (age < d.payoffAge) {
-          debtPayments += d.annualPayment
-        }
+        if (age < d.payoffAge) debtPayments += d.annualPayment
       }
 
-      // Cash flow
       const cashFlow = postTaxIncome - livingExp - toRoth - toHSA - debtPayments
       if (cashFlow > 0) {
         toStocks = cashFlow
         stockCostBasis += toStocks
       } else {
-        // Cover shortfall from cash first
         cash += cashFlow
         if (cash < 0) {
-          // Liquidate stocks
           const needed = -cash
           const gainsPct = stocks > 0 ? Math.max(0, (stocks - stockCostBasis) / stocks) : 0
           const taxOnGains = needed * gainsPct * capitalGainsTaxRate
@@ -154,20 +224,17 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       }
     }
 
-    // Asset allocation
+    // Asset allocation glide path
     const stockPct = stockAllocForAge(age, currentAge, retirementAge, stockAllocNow, stockAllocAtRetirement)
-    const bondPct = 1 - stockPct
 
-    // Returns (on starting balances)
-    const blendedReturn = stockPct * stockReturn + bondPct * bondReturn
+    // Returns
     const stkRet = stocks * stockReturn
     const bndRet = bonds * bondReturn
     const cshRet = cash * cashReturn
     const rothRet = roth * stockReturn
-    const k401Ret = k401 * (inputs.k401Return || blendedReturn)
+    const k401Ret = k401 * (inputs.k401Return || stockReturn)
     const hsaRet = hsa * hsaReturn
 
-    // Update balances
     if (!isRetired) {
       const k401Contrib = Math.min(k401Annual, sal * 0.5)
       k401 += k401Contrib + k401EmployerMatch + k401Ret
@@ -178,7 +245,7 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       bonds += bndRet
       cash += cshRet
     } else {
-      // Retirement drawdown
+      // Apply returns
       k401 += k401Ret
       roth += rothRet
       hsa += hsaRet
@@ -186,14 +253,15 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       bonds += bndRet
       cash += cshRet
 
-      const netDrawdown = Math.max(0, livingExp - ssIncome)
-      // Draw from cash first
+      // Net drawdown after SS, bridge income, RMD cash injection
+      const rmdCashCovered = (rmdEnabled && age >= 73) ? Math.min(rmdAmount * (1 - effectiveTaxRate - stateTaxRate), Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome)) : 0
+      const netDrawdown = Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome - rmdCashCovered)
+
       if (cash >= netDrawdown) {
         cash -= netDrawdown
       } else {
         const remaining = netDrawdown - cash
         cash = 0
-        // Draw from bonds next
         if (bonds >= remaining) {
           const gainsPctB = bonds > 0 ? Math.max(0, (bonds - bondCostBasis) / bonds) : 0
           const taxB = remaining * gainsPctB * capitalGainsTaxRate
@@ -224,13 +292,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       milestoneCost = ms.cost
       milestoneLabel = ms.label
       let remaining = milestoneCost
-      if (cash >= remaining) {
-        cash -= remaining
-        remaining = 0
-      } else {
-        remaining -= cash
-        cash = 0
-      }
+      if (cash >= remaining) { cash -= remaining; remaining = 0 }
+      else { remaining -= cash; cash = 0 }
       if (remaining > 0 && stocks >= remaining) {
         const gainsPct = stocks > 0 ? Math.max(0, (stocks - stockCostBasis) / stocks) : 0
         const tax = remaining * gainsPct * capitalGainsTaxRate
@@ -240,54 +303,33 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
         stockCostBasis = Math.max(0, stockCostBasis - remaining)
         remaining = 0
       }
-      if (remaining > 0 && bonds >= remaining) {
-        bonds -= remaining
-        remaining = 0
-      }
+      if (remaining > 0 && bonds >= remaining) { bonds -= remaining }
     }
 
     // Insolvency guard
     if (stocks < 0) stocks = 0
     if (bonds < 0) bonds = 0
     if (cash < 0) cash = 0
-    const portfolioDeficit = (stocks + bonds + cash + roth + k401 + hsa) <= 0 && isRetired
 
+    const portfolioDeficit = (stocks + bonds + cash + roth + k401 + hsa) <= 0 && isRetired
     const netWorth = stocks + bonds + cash + roth + k401 + hsa
     const realNetWorth = netWorth / Math.pow(1 + inflation, yearsElapsed)
     const netSavings = isRetired ? 0 : postTaxIncome - livingExp - debtPayments
 
     rows.push({
-      age,
-      year,
-      grossSalary,
-      postTaxIncome,
-      livingExpenses: livingExp,
-      debtPayments,
-      netSavings,
-      stocks,
-      bonds,
-      cash,
-      rothIRA: roth,
-      k401,
-      k401EmployerMatch,
-      hsa,
+      age, year, grossSalary, postTaxIncome, livingExpenses: livingExp,
+      debtPayments, netSavings, stocks, bonds, cash,
+      rothIRA: roth, k401, k401EmployerMatch, hsa,
       socialSecurityIncome: ssIncome,
-      netWorth,
-      realNetWorth,
+      healthcareCost, bridgeIncome, rmdAmount, windfall,
+      netWorth, realNetWorth,
       stockAllocationPct: stockPct,
-      milestoneCost,
-      milestoneLabel,
-      capGainsTaxPaid,
-      portfolioDeficit,
-      fireTarget,
-      cumulativeEmployerMatch,
-      cumulativeCapGainsTax,
-      cumulativeSocialSecurity,
+      milestoneCost, milestoneLabel,
+      capGainsTaxPaid, portfolioDeficit, fireTarget,
+      cumulativeEmployerMatch, cumulativeCapGainsTax, cumulativeSocialSecurity,
     })
 
-    if (age === retirementAge) {
-      finalPreRetirementSalary = sal
-    }
+    if (age === retirementAge) finalPreRetirementSalary = sal
 
     sal *= 1 + salaryGrowthRate
     spSal *= 1 + spouseSalaryGrowthRate
@@ -300,10 +342,13 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
   const firstMillionRow = rows.find(r => r.netWorth >= 1_000_000)
   const fireRow = rows.find(r => r.netWorth >= fireTarget)
   const deficitYears = rows.filter(r => r.portfolioDeficit).map(r => r.age)
-  const rothPhaseOutWarn = rothPhaseOut(
-    salary - Math.min(k401Annual, salary * 0.5),
-    filingStatus
-  )
+  const rothPhaseOutWarn = rothPhaseOut(salary - Math.min(k401Annual, salary * 0.5), filingStatus)
+
+  // Break-even age: first year investment returns exceed total annual expenses
+  const breakEvenRow = rows.find(r => {
+    const annualReturn = r.netWorth * 0.04
+    return annualReturn >= r.livingExpenses + r.healthcareCost
+  })
 
   const summary: ModelSummary = {
     startNetWorth: rows[0]?.netWorth ?? 0,
@@ -316,6 +361,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
     totalEmployerMatch: rows[rows.length - 1]?.cumulativeEmployerMatch ?? 0,
     totalCapGainsTax: rows[rows.length - 1]?.cumulativeCapGainsTax ?? 0,
     totalSocialSecurity: rows[rows.length - 1]?.cumulativeSocialSecurity ?? 0,
+    totalRMDTaxPaid: cumulativeRMDTax,
+    breakEvenAge: breakEvenRow?.age ?? null,
     yearsToRetirement: retirementAge - currentAge,
     rothPhaseOutWarning: rothPhaseOutWarn,
     deficitYears,

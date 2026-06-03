@@ -11,6 +11,7 @@ import { GlidepathChart } from './components/charts/GlidepathChart'
 import { DrawdownChart } from './components/charts/DrawdownChart'
 import { MilestoneManager } from './components/inputs/MilestoneManager'
 import { DebtManager } from './components/inputs/DebtManager'
+import { IncomeEventManager } from './components/inputs/IncomeEventManager'
 import { ScenarioPanel } from './components/scenarios/ScenarioPanel'
 import { MonteCarloChart } from './components/charts/MonteCarloChart'
 import { exportCSV, exportJSON } from './utils/exporters'
@@ -126,6 +127,15 @@ export default function App() {
           {activeSection === 'debts' && (
             <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
               <DebtManager />
+            </SectionWrapper>
+          )}
+
+          {activeSection === 'income-events' && (
+            <SectionWrapper
+              title="Income Events"
+              subtitle="One-time windfalls: bonuses, RSU vests, inheritances, home sale proceeds"
+            >
+              <IncomeEventManager />
             </SectionWrapper>
           )}
 

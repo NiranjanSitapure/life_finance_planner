@@ -1,4 +1,4 @@
-import type { ModelInputs, Milestone, Debt } from './types'
+import type { ModelInputs, Milestone, Debt, IncomeEvent } from './types'
 
 export const DEFAULT_MILESTONES: Milestone[] = [
   { id: 'm1', age: 30, label: 'House Down Payment', cost: 100000, enabled: true },
@@ -10,6 +10,8 @@ export const DEFAULT_MILESTONES: Milestone[] = [
 ]
 
 export const DEFAULT_DEBTS: Debt[] = []
+
+export const DEFAULT_INCOME_EVENTS: IncomeEvent[] = []
 
 export const DEFAULT_INPUTS: ModelInputs = {
   currentAge: 28,
@@ -51,7 +53,18 @@ export const DEFAULT_INPUTS: ModelInputs = {
 
   baseAnnualExpenses: 80000,
   discretionaryPct: 0.10,
-  retirementSpendingPct: 0.75,
+  retirementSpendingEarly: 0.90,
+  retirementSpendingMid: 0.70,
+  retirementSpendingLate: 0.85,
+
+  healthcarePreMedicare: 18000,
+  healthcarePostMedicare: 3000,
+
+  bridgeIncomeAmount: 0,
+  bridgeIncomeStartAge: 55,
+  bridgeIncomeEndAge: 65,
+
+  rmdEnabled: true,
 
   stockAllocNow: 0.90,
   stockAllocAtRetirement: 0.50,
@@ -62,4 +75,5 @@ export const DEFAULT_INPUTS: ModelInputs = {
 
   milestones: DEFAULT_MILESTONES,
   debts: DEFAULT_DEBTS,
+  incomeEvents: DEFAULT_INCOME_EVENTS,
 }

@@ -7,6 +7,7 @@ const NAV = [
   { id: 'charts', label: 'Charts', icon: '◫' },
   { id: 'milestones', label: 'Milestones', icon: '⚑' },
   { id: 'debts', label: 'Debts', icon: '◎' },
+  { id: 'income-events', label: 'Income Events', icon: '✦' },
   { id: 'scenarios', label: 'Scenarios', icon: '⊞' },
   { id: 'montecarlo', label: 'Monte Carlo', icon: '∿' },
 ]
