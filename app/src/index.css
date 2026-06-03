@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.font-mono-nums {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Recharts tooltip override */
+.recharts-tooltip-wrapper {
+  z-index: 100;
+}
