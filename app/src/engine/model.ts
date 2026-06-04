@@ -2,6 +2,8 @@ import type { ModelInputs, ProjectionRow, ModelSummary } from './types'
 
 const ROTH_PHASEOUT_SINGLE = 146000
 const ROTH_PHASEOUT_MARRIED = 230000
+// 2024 FRA maximum annual SS benefit (monthly $3,822 × 12)
+const SS_MAX_ANNUAL = 45864
 
 // IRS Uniform Lifetime Table (age -> distribution period)
 const IRS_RMD_TABLE: Record<number, number> = {
@@ -37,7 +39,7 @@ function retirementSpendingMultiplier(
 
 export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; summary: ModelSummary } {
   const {
-    currentAge, retirementAge, filingStatus,
+    currentAge, retirementAge, spouseRetirementAge, filingStatus,
     salary, salaryGrowthRate, spouseSalary, spouseSalaryGrowthRate,
     sideIncomeAmount, sideIncomeStartAge, sideIncomeEndAge,
     k401Annual, employerMatchPct, employerMatchCap, iraAnnual, hsaAnnual,
@@ -52,6 +54,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
     socialSecurityEnabled, ssClaimingAge, ssBenefitPct,
     milestones, debts, incomeEvents,
   } = inputs
+
+  const totalTaxRate = effectiveTaxRate + stateTaxRate
 
   const HORIZON = Math.max(60, 90 - currentAge + 2)
   const rows: ProjectionRow[] = []
@@ -100,7 +104,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
   const fireTarget = (baseAnnualExpenses * retirementSpendingEarly) / 0.04
 
   for (let i = 0; i < HORIZON; i++) {
-    const isRetired = age > retirementAge
+    // FIX: was age > retirementAge (excluded the retirement year itself)
+    const isRetired = age >= retirementAge
     const yearsElapsed = i
 
     let grossSalary = 0
@@ -126,9 +131,9 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
         : healthcarePostMedicare * Math.pow(1 + inflation, age - retirementAge)
     }
 
-    // --- Bridge income (post-tax, part-time work in early retirement) ---
+    // FIX: bridge income taxed at full rate, not arbitrary 50% factor
     if (isRetired && bridgeIncomeAmount > 0 && age >= bridgeIncomeStartAge && age <= bridgeIncomeEndAge) {
-      bridgeIncome = bridgeIncomeAmount * (1 - (effectiveTaxRate * 0.5)) // lighter tax on part-time
+      bridgeIncome = bridgeIncomeAmount * (1 - totalTaxRate)
     }
 
     // --- Living expenses ---
@@ -149,24 +154,25 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       lastPreRetirementExpenses = livingExp
     }
 
-    // --- Social Security (with COLA: SS grows with inflation) ---
+    // FIX: SS COLA starts at retirementAge (not ssClaimingAge); base capped at SS_MAX_ANNUAL
     if (socialSecurityEnabled && age >= ssClaimingAge) {
-      const yearsOfCOLA = age - ssClaimingAge
-      ssIncome = finalPreRetirementSalary * ssBenefitPct * Math.pow(1 + inflation, yearsOfCOLA)
+      const ssBase = Math.min(finalPreRetirementSalary * ssBenefitPct, SS_MAX_ANNUAL)
+      ssIncome = ssBase * Math.pow(1 + inflation, age - retirementAge)
       cumulativeSocialSecurity += ssIncome
     }
+
+    // FIX: net SS after 85% federal taxability rule
+    const netSS = ssIncome * (1 - 0.85 * totalTaxRate)
 
     // --- RMDs (age 73+) ---
     if (isRetired && rmdEnabled && age >= 73 && k401 > 0) {
       const period = IRS_RMD_TABLE[Math.min(age, 100)] ?? 6.4
       rmdAmount = k401 / period
-      // Force withdrawal from 401k, apply income tax
-      const rmdTax = rmdAmount * (effectiveTaxRate + stateTaxRate)
+      const rmdTax = rmdAmount * totalTaxRate
       cumulativeRMDTax += rmdTax
       k401 -= rmdAmount
       const afterTaxRMD = rmdAmount - rmdTax
-      // If after-tax RMD exceeds net drawdown need, invest surplus in stocks
-      const totalNeed = Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome)
+      const totalNeed = Math.max(0, livingExp + healthcareCost - netSS - bridgeIncome)
       if (afterTaxRMD > totalNeed) {
         const surplus = afterTaxRMD - totalNeed
         stocks += surplus
@@ -180,22 +186,21 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
     // --- Income events (windfalls) ---
     if (incomeEventMap.has(age)) {
       for (const ev of incomeEventMap.get(age)!) {
-        const afterTax = ev.taxable
-          ? ev.amount * (1 - (effectiveTaxRate + stateTaxRate))
-          : ev.amount
+        const afterTax = ev.taxable ? ev.amount * (1 - totalTaxRate) : ev.amount
         windfall += afterTax
         cash += afterTax
       }
     }
 
     if (!isRetired) {
-      grossSalary = sal + spSal + sideIncome
+      // FIX: spouse salary stops at spouseRetirementAge
+      const activeSpSal = age < spouseRetirementAge ? spSal : 0
+      grossSalary = sal + activeSpSal + sideIncome
       const k401Contrib = Math.min(k401Annual, sal * 0.5)
       k401EmployerMatch = Math.min(sal * employerMatchPct, sal * employerMatchCap)
-      const taxableIncome = grossSalary - k401Contrib
-      const totalTaxRate = effectiveTaxRate + stateTaxRate
-      const incomeTax = taxableIncome * totalTaxRate
-      postTaxIncome = taxableIncome - incomeTax
+      // FIX: HSA is pre-tax (reduces taxable income like 401k)
+      const taxableIncome = grossSalary - k401Contrib - hsaAnnual
+      postTaxIncome = taxableIncome * (1 - totalTaxRate)
 
       const phaseOut = rothPhaseOut(taxableIncome, filingStatus)
       if (!phaseOut || backdoorRoth) toRoth = iraAnnual
@@ -205,7 +210,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
         if (age < d.payoffAge) debtPayments += d.annualPayment
       }
 
-      const cashFlow = postTaxIncome - livingExp - toRoth - toHSA - debtPayments
+      // FIX: HSA already deducted pre-tax — don't double-deduct from cash flow
+      const cashFlow = postTaxIncome - livingExp - toRoth - debtPayments
       if (cashFlow > 0) {
         toStocks = cashFlow
         stockCostBasis += toStocks
@@ -213,18 +219,20 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
         cash += cashFlow
         if (cash < 0) {
           const needed = -cash
-          const gainsPct = stocks > 0 ? Math.max(0, (stocks - stockCostBasis) / stocks) : 0
+          const stocksBefore = stocks
+          const gainsPct = stocksBefore > 0 ? Math.max(0, (stocks - stockCostBasis) / stocksBefore) : 0
           const taxOnGains = needed * gainsPct * capitalGainsTaxRate
           capGainsTaxPaid += taxOnGains
           cumulativeCapGainsTax += taxOnGains
+          // FIX: proportional cost basis reduction
+          if (stocksBefore > 0) stockCostBasis = Math.max(0, stockCostBasis - needed * (stockCostBasis / stocksBefore))
           stocks -= needed + taxOnGains
-          stockCostBasis = Math.max(0, stockCostBasis - needed)
           cash = 0
         }
       }
     }
 
-    // Asset allocation glide path
+    // Asset allocation glide path target
     const stockPct = stockAllocForAge(age, currentAge, retirementAge, stockAllocNow, stockAllocAtRetirement)
 
     // Returns
@@ -239,8 +247,8 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       const k401Contrib = Math.min(k401Annual, sal * 0.5)
       k401 += k401Contrib + k401EmployerMatch + k401Ret
       cumulativeEmployerMatch += k401EmployerMatch
-      roth += toRoth + rothRet
       hsa += toHSA + hsaRet
+      roth += toRoth + rothRet
       stocks += toStocks + stkRet
       bonds += bndRet
       cash += cshRet
@@ -253,34 +261,93 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       bonds += bndRet
       cash += cshRet
 
-      // Net drawdown after SS, bridge income, RMD cash injection
-      const rmdCashCovered = (rmdEnabled && age >= 73) ? Math.min(rmdAmount * (1 - effectiveTaxRate - stateTaxRate), Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome)) : 0
-      const netDrawdown = Math.max(0, livingExp + healthcareCost - ssIncome - bridgeIncome - rmdCashCovered)
+      // Net drawdown after net SS, bridge income, RMD cash injection
+      const rmdCashCovered = (rmdEnabled && age >= 73)
+        ? Math.min(rmdAmount * (1 - totalTaxRate), Math.max(0, livingExp + healthcareCost - netSS - bridgeIncome))
+        : 0
+      const netDrawdown = Math.max(0, livingExp + healthcareCost - netSS - bridgeIncome - rmdCashCovered)
 
-      if (cash >= netDrawdown) {
-        cash -= netDrawdown
+      let remaining = netDrawdown
+      if (cash >= remaining) {
+        cash -= remaining
+        remaining = 0
       } else {
-        const remaining = netDrawdown - cash
+        remaining -= cash
         cash = 0
-        if (bonds >= remaining) {
-          const gainsPctB = bonds > 0 ? Math.max(0, (bonds - bondCostBasis) / bonds) : 0
-          const taxB = remaining * gainsPctB * capitalGainsTaxRate
-          capGainsTaxPaid += taxB
-          cumulativeCapGainsTax += taxB
-          bonds -= remaining + taxB
-          bondCostBasis = Math.max(0, bondCostBasis - remaining)
-        } else {
-          const fromBonds = bonds
-          bonds = 0
-          bondCostBasis = 0
-          const fromStocks = remaining - fromBonds
-          const gainsPctS = stocks > 0 ? Math.max(0, (stocks - stockCostBasis) / stocks) : 0
-          const taxS = fromStocks * gainsPctS * capitalGainsTaxRate
-          capGainsTaxPaid += taxS
-          cumulativeCapGainsTax += taxS
-          stocks -= fromStocks + taxS
-          stockCostBasis = Math.max(0, stockCostBasis - fromStocks)
-        }
+      }
+
+      // Draw from bonds (taxable, proportional cost basis)
+      if (remaining > 0 && bonds > 0) {
+        const fromBonds = Math.min(bonds, remaining)
+        const bondsBefore = bonds
+        const gainsPctB = bondsBefore > 0 ? Math.max(0, (bonds - bondCostBasis) / bondsBefore) : 0
+        const taxB = fromBonds * gainsPctB * capitalGainsTaxRate
+        capGainsTaxPaid += taxB
+        cumulativeCapGainsTax += taxB
+        // FIX: proportional cost basis reduction
+        bondCostBasis = Math.max(0, bondCostBasis - fromBonds * (bondCostBasis / bondsBefore))
+        bonds -= fromBonds + taxB
+        remaining -= fromBonds
+      }
+
+      // Draw from stocks (taxable, proportional cost basis)
+      if (remaining > 0 && stocks > 0) {
+        const fromStocks = Math.min(stocks, remaining)
+        const stocksBefore = stocks
+        const gainsPctS = stocksBefore > 0 ? Math.max(0, (stocks - stockCostBasis) / stocksBefore) : 0
+        const taxS = fromStocks * gainsPctS * capitalGainsTaxRate
+        capGainsTaxPaid += taxS
+        cumulativeCapGainsTax += taxS
+        // FIX: proportional cost basis reduction
+        stockCostBasis = Math.max(0, stockCostBasis - fromStocks * (stockCostBasis / stocksBefore))
+        stocks -= fromStocks + taxS
+        remaining -= fromStocks
+      }
+
+      // FIX: draw from Roth IRA (tax-free) as second-to-last resort
+      if (remaining > 0 && roth > 0) {
+        const fromRoth = Math.min(roth, remaining)
+        roth -= fromRoth
+        remaining -= fromRoth
+      }
+
+      // FIX: draw from HSA (tax-free for medical) as last resort
+      if (remaining > 0 && hsa > 0) {
+        const fromHSA = Math.min(hsa, remaining)
+        hsa -= fromHSA
+        remaining -= fromHSA
+      }
+    }
+
+    // FIX: enforce glide path via annual rebalance between taxable stocks and bonds
+    if (stocks + bonds > 1) {
+      const targetStocks = (stocks + bonds) * stockPct
+      if (stocks > targetStocks + 1) {
+        // Sell excess stocks into bonds
+        const sell = stocks - targetStocks
+        const stocksBefore = stocks
+        const gainsPct = stocksBefore > 0 ? Math.max(0, (stocks - stockCostBasis) / stocksBefore) : 0
+        const tax = sell * gainsPct * capitalGainsTaxRate
+        capGainsTaxPaid += tax
+        cumulativeCapGainsTax += tax
+        stockCostBasis = Math.max(0, stockCostBasis - sell * (stockCostBasis / stocksBefore))
+        stocks -= sell + tax
+        const proceeds = sell - tax
+        bonds += proceeds
+        bondCostBasis += proceeds
+      } else if (stocks < targetStocks - 1 && bonds > 0) {
+        // Sell bonds into stocks
+        const sell = Math.min(bonds, targetStocks - stocks)
+        const bondsBefore = bonds
+        const gainsPct = bondsBefore > 0 ? Math.max(0, (bonds - bondCostBasis) / bondsBefore) : 0
+        const tax = sell * gainsPct * capitalGainsTaxRate
+        capGainsTaxPaid += tax
+        cumulativeCapGainsTax += tax
+        bondCostBasis = Math.max(0, bondCostBasis - sell * (bondCostBasis / bondsBefore))
+        bonds -= sell + tax
+        const proceeds = sell - tax
+        stocks += proceeds
+        stockCostBasis += proceeds
       }
     }
 
@@ -294,24 +361,36 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       let remaining = milestoneCost
       if (cash >= remaining) { cash -= remaining; remaining = 0 }
       else { remaining -= cash; cash = 0 }
-      if (remaining > 0 && stocks >= remaining) {
-        const gainsPct = stocks > 0 ? Math.max(0, (stocks - stockCostBasis) / stocks) : 0
-        const tax = remaining * gainsPct * capitalGainsTaxRate
+      if (remaining > 0 && stocks > 0) {
+        const fromStocks = Math.min(stocks, remaining)
+        const stocksBefore = stocks
+        const gainsPct = stocksBefore > 0 ? Math.max(0, (stocks - stockCostBasis) / stocksBefore) : 0
+        const tax = fromStocks * gainsPct * capitalGainsTaxRate
         capGainsTaxPaid += tax
         cumulativeCapGainsTax += tax
-        stocks -= remaining + tax
-        stockCostBasis = Math.max(0, stockCostBasis - remaining)
-        remaining = 0
+        // FIX: proportional cost basis reduction
+        stockCostBasis = Math.max(0, stockCostBasis - fromStocks * (stockCostBasis / stocksBefore))
+        stocks -= fromStocks + tax
+        remaining -= fromStocks
       }
-      if (remaining > 0 && bonds >= remaining) { bonds -= remaining }
+      if (remaining > 0 && bonds > 0) {
+        const fromBonds = Math.min(bonds, remaining)
+        const bondsBefore = bonds
+        // FIX: proportional cost basis reduction
+        bondCostBasis = Math.max(0, bondCostBasis - fromBonds * (bondCostBasis / bondsBefore))
+        bonds -= fromBonds
+      }
     }
 
     // Insolvency guard
     if (stocks < 0) stocks = 0
     if (bonds < 0) bonds = 0
     if (cash < 0) cash = 0
+    if (roth < 0) roth = 0
+    if (hsa < 0) hsa = 0
 
-    const portfolioDeficit = (stocks + bonds + cash + roth + k401 + hsa) <= 0 && isRetired
+    // FIX: deficit fires when liquid accounts are depleted (Roth/HSA are long-term preserved)
+    const portfolioDeficit = (stocks + bonds + cash) <= 0 && isRetired
     const netWorth = stocks + bonds + cash + roth + k401 + hsa
     const realNetWorth = netWorth / Math.pow(1 + inflation, yearsElapsed)
     const netSavings = isRetired ? 0 : postTaxIncome - livingExp - debtPayments

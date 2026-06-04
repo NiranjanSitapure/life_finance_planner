@@ -94,6 +94,7 @@ export function sanitizeInputs(raw: unknown): ModelInputs {
     salaryGrowthRate: num(r.salaryGrowthRate, d.salaryGrowthRate),
     spouseSalary: num(r.spouseSalary, d.spouseSalary),
     spouseSalaryGrowthRate: num(r.spouseSalaryGrowthRate, d.spouseSalaryGrowthRate),
+    spouseRetirementAge: Math.round(num(r.spouseRetirementAge, d.spouseRetirementAge)),
     sideIncomeAmount: num(r.sideIncomeAmount, d.sideIncomeAmount),
     sideIncomeStartAge: Math.round(num(r.sideIncomeStartAge, d.sideIncomeStartAge)),
     sideIncomeEndAge: Math.round(num(r.sideIncomeEndAge, d.sideIncomeEndAge)),

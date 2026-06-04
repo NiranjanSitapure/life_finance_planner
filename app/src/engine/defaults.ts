@@ -22,6 +22,7 @@ export const DEFAULT_INPUTS: ModelInputs = {
   salaryGrowthRate: 0.07,
   spouseSalary: 0,
   spouseSalaryGrowthRate: 0.05,
+  spouseRetirementAge: 65,
   sideIncomeAmount: 0,
   sideIncomeStartAge: 30,
   sideIncomeEndAge: 40,

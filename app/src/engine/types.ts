@@ -34,6 +34,7 @@ export interface ModelInputs {
   salaryGrowthRate: number
   spouseSalary: number
   spouseSalaryGrowthRate: number
+  spouseRetirementAge: number
   sideIncomeAmount: number
   sideIncomeStartAge: number
   sideIncomeEndAge: number
