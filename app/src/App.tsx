@@ -9,6 +9,7 @@ import { SummaryCards } from './components/dashboard/SummaryCards'
 import { ParameterForm } from './components/inputs/ParameterForm'
 import { IntermediateParameterForm } from './components/inputs/IntermediateParameterForm'
 import { OnboardingTutorial } from './components/onboarding/OnboardingTutorial'
+import { WelcomeDialog } from './components/onboarding/WelcomeDialog'
 import { exportCSV, exportJSON } from './utils/exporters'
 
 // Lazy-loaded heavy components — Vite emits a separate chunk for each,
@@ -91,10 +92,11 @@ function RehydrationErrorBanner() {
 }
 
 export default function App() {
-  const { activeSection, mode, showAdvancedWarning, rehydrationError } = useStore()
+  const { activeSection, mode, showAdvancedWarning, rehydrationError, hasSeenWelcome } = useStore()
 
   return (
     <div className="min-h-screen bg-slate-900">
+      {!hasSeenWelcome && <WelcomeDialog />}
       <OnboardingTutorial />
       <Sidebar />
       <main className="md:ml-56 pb-20 md:pb-0">

@@ -30,6 +30,8 @@ interface AppState {
   }
   showAdvancedWarning: boolean
   rehydrationError: boolean
+  hasSeenWelcome: boolean
+  hasSeenAdvancedOnboarding: boolean
   showOnboarding: boolean
   onboardingStep: number
   onboardingType: 'advanced' | 'intermediate' | null
@@ -49,6 +51,7 @@ interface AppState {
   switchToAdvanced: () => void
   dismissAdvancedWarning: () => void
   dismissRehydrationError: () => void
+  dismissWelcome: () => void
   dismissOnboarding: () => void
   nextOnboardingStep: () => void
   prevOnboardingStep: () => void
@@ -102,6 +105,8 @@ export const useStore = create<AppState>()(
       },
       showAdvancedWarning: false,
       rehydrationError: false,
+      hasSeenWelcome: false,
+      hasSeenAdvancedOnboarding: false,
       showOnboarding: false,
       onboardingStep: 0,
       onboardingType: null,
@@ -172,32 +177,30 @@ export const useStore = create<AppState>()(
       },
 
       switchToAdvanced: () => {
-        const { simpleModeInputs, mode } = get()
-        if (mode === 'simple') {
-          const lifestylePct = simpleModeInputs.lifestyle === 'necessities' ? 0.50 : simpleModeInputs.lifestyle === 'comfortable' ? 0.65 : 0.80
-          const mapped = mapSimpleToFull(simpleModeInputs, lifestylePct)
-          const { rows, summary } = compute(mapped)
-          set({
-            inputs: mapped, rows, summary,
-            mode: 'advanced',
-            showAdvancedWarning: true,
-            showOnboarding: true,
-            onboardingStep: 0,
-            onboardingType: 'advanced',
-          })
-        } else {
-          set({ mode: 'advanced', showOnboarding: false })
-        }
+        const { simpleModeInputs, mode, hasSeenAdvancedOnboarding } = get()
+        const lifestylePct = simpleModeInputs.lifestyle === 'necessities' ? 0.50 : simpleModeInputs.lifestyle === 'comfortable' ? 0.65 : 0.80
+        const mapped = mode === 'simple' ? mapSimpleToFull(simpleModeInputs, lifestylePct) : get().inputs
+        const { rows, summary } = compute(mapped)
+        set({
+          inputs: mapped, rows, summary,
+          mode: 'advanced',
+          showAdvancedWarning: true,
+          showOnboarding: !hasSeenAdvancedOnboarding,
+          hasSeenAdvancedOnboarding: true,
+          onboardingStep: 0,
+          onboardingType: 'advanced',
+        })
       },
 
       dismissAdvancedWarning: () => set({ showAdvancedWarning: false }),
       dismissRehydrationError: () => set({ rehydrationError: false }),
+      dismissWelcome: () => set({ hasSeenWelcome: true }),
 
       dismissOnboarding: () => set({ showOnboarding: false, onboardingStep: 0, onboardingType: null }),
 
       nextOnboardingStep: () => {
         const { onboardingStep, onboardingType } = get()
-        const maxSteps = onboardingType === 'intermediate' ? 2 : 6
+        const maxSteps = onboardingType === 'intermediate' ? 5 : 6
         if (onboardingStep >= maxSteps) {
           set({ showOnboarding: false, onboardingStep: 0, onboardingType: null })
         } else {
@@ -223,6 +226,8 @@ export const useStore = create<AppState>()(
         mode: state.mode,
         simpleModeInputs: state.simpleModeInputs,
         showAdvancedWarning: state.showAdvancedWarning,
+        hasSeenWelcome: state.hasSeenWelcome,
+        hasSeenAdvancedOnboarding: state.hasSeenAdvancedOnboarding,
         showOnboarding: state.showOnboarding,
         onboardingStep: state.onboardingStep,
         onboardingType: state.onboardingType,

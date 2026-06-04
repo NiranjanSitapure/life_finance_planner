@@ -1,4 +1,5 @@
 import { useStore } from '../../store/useStore'
+import { IntermediateWizard } from './IntermediateWizard'
 
 const ADVANCED_STEPS = [
   {
@@ -95,46 +96,6 @@ Tap ℹ on any parameter for a plain-English explanation. Switch between Basic /
   },
 ]
 
-const INTERMEDIATE_STEPS = [
-  {
-    icon: '⚡',
-    title: 'Welcome to Intermediate Mode',
-    section: null,
-    sectionLabel: null,
-    description: `Intermediate mode gives you meaningful control without the complexity of the full advanced setup.
-
-Your inputs have been pre-filled from your Basic mode estimates. Over the next few steps, we'll help you fill in the key details that make the biggest difference to your projection.`,
-    action: "Let's go →",
-  },
-  {
-    icon: '💼',
-    title: 'Step 1 — Income & Accounts',
-    section: 'inputs',
-    sectionLabel: 'Parameters',
-    description: `Go to Parameters and check:
-
-• Your exact salary and expected annual raise
-• Account balances split by type (stocks, cash, 401k, Roth IRA)
-• Your annual 401(k) contribution and employer match
-
-The employer match is free money — make sure you're capturing all of it.`,
-    action: 'Got it →',
-  },
-  {
-    icon: '🎉',
-    title: "You're All Set!",
-    section: 'charts',
-    sectionLabel: 'Charts',
-    description: `Your projection is ready. Check out:
-
-📊 Charts — See your net worth grow over time and how retirement drawdown looks
-
-📋 Projections — Year-by-year table of savings, income, and expenses
-
-When you're ready for full control — milestones, debts, Monte Carlo simulations — switch to Advanced mode anytime from the toggle at the top.`,
-    action: 'Start exploring →',
-  },
-]
 
 export function OnboardingTutorial() {
   const {
@@ -145,7 +106,9 @@ export function OnboardingTutorial() {
 
   if (!showOnboarding) return null
 
-  const steps = onboardingType === 'intermediate' ? INTERMEDIATE_STEPS : ADVANCED_STEPS
+  if (onboardingType === 'intermediate') return <IntermediateWizard />
+
+  const steps = ADVANCED_STEPS
   const step = steps[onboardingStep]
   const isFirst = onboardingStep === 0
   const isLast = onboardingStep === steps.length - 1
