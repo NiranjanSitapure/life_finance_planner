@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts'
 import { useStore } from '../../store/useStore'
 import { fmtCurrency } from '../../utils/formatters'
+import type { ChartTooltipProps } from '../../utils/chartTypes'
 
 const COLORS = {
   k401: '#6366f1',
@@ -14,13 +16,13 @@ const COLORS = {
   cash: '#f59e0b',
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
-  const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0)
+  const total = payload.reduce((s, p) => s + (p.value || 0), 0)
   return (
     <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
       <div className="text-slate-300 font-medium mb-1">Age {label}</div>
-      {[...payload].reverse().map((p: any) => (
+      {[...payload].reverse().map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.fill }}>{p.name}</span>
           <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
@@ -37,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function AssetBreakdownChart() {
   const { rows } = useStore()
 
-  const data = rows.map(r => ({
+  const data = useMemo(() => rows.map(r => ({
     age: r.age,
     k401: Math.max(0, r.k401),
     rothIRA: Math.max(0, r.rothIRA),
@@ -45,7 +47,7 @@ export function AssetBreakdownChart() {
     stocks: Math.max(0, r.stocks),
     bonds: Math.max(0, r.bonds),
     cash: Math.max(0, r.cash),
-  }))
+  })), [rows])
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">

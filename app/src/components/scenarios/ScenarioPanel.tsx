@@ -2,6 +2,8 @@ import { useStore } from '../../store/useStore'
 import { fmtCurrency, fmtAge } from '../../utils/formatters'
 import { DEFAULT_INPUTS } from '../../engine/defaults'
 import { runProjection } from '../../engine/model'
+import { sanitizeInputs } from '../../engine/validate'
+import { nanoid } from '../../utils/nanoid'
 
 const PRESETS = [
   { name: 'Base Case', overrides: {} },
@@ -12,29 +14,25 @@ const PRESETS = [
   { name: 'No Social Security', overrides: { socialSecurityEnabled: false } },
 ]
 
+const COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899']
+
 export function ScenarioPanel() {
   const { scenarios, deleteScenario } = useStore()
 
   const addPreset = (preset: typeof PRESETS[0]) => {
-    const presetInputs = { ...DEFAULT_INPUTS, ...preset.overrides }
+    // sanitizeInputs ensures preset overrides can't inject malformed values
+    const presetInputs = sanitizeInputs({ ...DEFAULT_INPUTS, ...preset.overrides })
     const { rows, summary } = runProjection(presetInputs)
-    // We call saveScenario which uses current inputs — instead we do a manual approach
-    // by temporarily patching the store. Since saveScenario uses store state,
-    // we just compute and store manually.
-    useStore.setState(state => {
-      const COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899']
-      const color = COLORS[state.scenarios.length % COLORS.length]
-      return {
-        scenarios: [...state.scenarios, {
-          id: Math.random().toString(36).slice(2),
-          name: preset.name,
-          color,
-          inputs: presetInputs,
-          rows,
-          summary,
-        }]
-      }
-    })
+    useStore.setState(state => ({
+      scenarios: [...state.scenarios, {
+        id: nanoid(),
+        name: preset.name,
+        color: COLORS[state.scenarios.length % COLORS.length],
+        inputs: presetInputs,
+        rows,
+        summary,
+      }]
+    }))
   }
 
   return (

@@ -315,7 +315,6 @@ export function runProjection(inputs: ModelInputs): { rows: ProjectionRow[]; sum
       if (remaining > 0 && hsa > 0) {
         const fromHSA = Math.min(hsa, remaining)
         hsa -= fromHSA
-        remaining -= fromHSA
       }
     }
 

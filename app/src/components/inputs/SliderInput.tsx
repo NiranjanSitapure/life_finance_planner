@@ -15,12 +15,8 @@ interface Props {
 }
 
 export function SliderInput({ label, value, min, max, step, format, onChange, hint, warning, tooltip }: Props) {
-  const [raw, setRaw] = React.useState(format(value))
+  const [raw, setRaw] = React.useState('')
   const [editing, setEditing] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!editing) setRaw(format(value))
-  }, [value, editing, format])
 
   return (
     <div className="space-y-1.5">

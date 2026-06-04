@@ -1,16 +1,18 @@
+import { useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend, ReferenceLine
 } from 'recharts'
 import { useStore } from '../../store/useStore'
 import { fmtCurrency } from '../../utils/formatters'
+import type { ChartTooltipProps } from '../../utils/chartTypes'
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
       <div className="text-slate-300 font-medium mb-1">Age {label}</div>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
           <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
@@ -23,14 +25,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function DrawdownChart() {
   const { rows, inputs } = useStore()
 
-  const retirementRows = rows.filter(r => r.age >= inputs.retirementAge)
+  const retirementRows = useMemo(
+    () => rows.filter(r => r.age >= inputs.retirementAge),
+    [rows, inputs.retirementAge]
+  )
 
-  const data = retirementRows.map(r => ({
+  const data = useMemo(() => retirementRows.map(r => ({
     age: r.age,
     netWorth: Math.max(0, r.netWorth),
     spending: r.livingExpenses,
     socialSecurity: r.socialSecurityIncome,
-  }))
+  })), [retirementRows])
 
   const depletionRow = retirementRows.find(r => r.portfolioDeficit)
 

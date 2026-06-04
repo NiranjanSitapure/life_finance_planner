@@ -1,16 +1,18 @@
+import { useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Legend
 } from 'recharts'
 import { useStore } from '../../store/useStore'
 import { fmtCurrency } from '../../utils/formatters'
+import type { ChartTooltipProps } from '../../utils/chartTypes'
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
       <div className="text-slate-300 font-medium mb-1">Age {label}</div>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
           <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
@@ -23,13 +25,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function NetWorthChart() {
   const { rows, summary, inputs, scenarios } = useStore()
 
-  const data = rows.map(r => ({
+  const data = useMemo(() => rows.map(r => ({
     age: r.age,
     nominal: r.netWorth,
     real: r.realNetWorth,
-  }))
+  })), [rows])
 
-  const milestoneAges = inputs.milestones.filter(m => m.enabled).map(m => m.age)
+  const milestoneAges = useMemo(
+    () => inputs.milestones.filter(m => m.enabled).map(m => m.age),
+    [inputs.milestones]
+  )
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
@@ -50,28 +55,21 @@ export function NetWorthChart() {
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
 
-          {/* FIRE target line */}
           <ReferenceLine
             y={summary.fireNumber}
             stroke="#8b5cf6"
             strokeDasharray="6 3"
             label={{ value: 'FIRE', fill: '#8b5cf6', fontSize: 11, position: 'insideTopRight' }}
           />
-
-          {/* Retirement age */}
           <ReferenceLine
             x={inputs.retirementAge}
             stroke="#14b8a6"
             strokeDasharray="4 4"
             label={{ value: 'Retire', fill: '#14b8a6', fontSize: 10, position: 'insideTopLeft' }}
           />
-
-          {/* Milestone ages */}
           {milestoneAges.map(a => (
             <ReferenceLine key={a} x={a} stroke="#f59e0b" strokeDasharray="2 4" strokeOpacity={0.5} />
           ))}
-
-          {/* Scenario lines */}
           {scenarios.map(s => (
             <Line
               key={s.id}
@@ -86,7 +84,6 @@ export function NetWorthChart() {
               strokeDasharray="4 2"
             />
           ))}
-
           <Line type="monotone" dataKey="real" name="Real (today's $)" stroke="#64748b" strokeWidth={1.5} dot={false} />
           <Line type="monotone" dataKey="nominal" name="Nominal" stroke="#14b8a6" strokeWidth={2.5} dot={false} />
         </LineChart>

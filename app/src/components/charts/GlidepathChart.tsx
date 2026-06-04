@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
@@ -7,11 +8,11 @@ import { useStore } from '../../store/useStore'
 export function GlidepathChart() {
   const { rows } = useStore()
 
-  const data = rows.map(r => ({
+  const data = useMemo(() => rows.map(r => ({
     age: r.age,
     stocks: Math.round(r.stockAllocationPct * 100),
     bonds: Math.round((1 - r.stockAllocationPct) * 100),
-  }))
+  })), [rows])
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
@@ -22,7 +23,7 @@ export function GlidepathChart() {
           <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 11 }} />
           <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} domain={[0, 100]} width={45} />
           <Tooltip
-            formatter={(v: any) => `${v}%`}
+            formatter={(v) => (v != null ? `${v}%` : '')}
             contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: '#cbd5e1' }}
           />

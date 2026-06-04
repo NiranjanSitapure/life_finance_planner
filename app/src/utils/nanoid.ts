@@ -1,3 +1,7 @@
-export function nanoid(): string {
-  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+export function nanoid(size = 21): string {
+  const bytes = new Uint8Array(size)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, b => CHARS[b % CHARS.length]).join('')
 }

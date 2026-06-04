@@ -1,4 +1,5 @@
 export function fmtCurrency(value: number, compact = false): string {
+  if (!Number.isFinite(value)) return '$—'
   if (compact) {
     if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
     if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
@@ -11,6 +12,7 @@ export function fmtCurrency(value: number, compact = false): string {
 }
 
 export function fmtPct(value: number, decimals = 1): string {
+  if (!Number.isFinite(value)) return '—%'
   return `${(value * 100).toFixed(decimals)}%`
 }
 

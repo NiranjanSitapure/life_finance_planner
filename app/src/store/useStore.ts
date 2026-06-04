@@ -29,6 +29,7 @@ interface AppState {
     lifestyle: 'necessities' | 'comfortable' | 'lavish'
   }
   showAdvancedWarning: boolean
+  rehydrationError: boolean
   showOnboarding: boolean
   onboardingStep: number
   onboardingType: 'advanced' | 'intermediate' | null
@@ -47,6 +48,7 @@ interface AppState {
   switchToIntermediate: () => void
   switchToAdvanced: () => void
   dismissAdvancedWarning: () => void
+  dismissRehydrationError: () => void
   dismissOnboarding: () => void
   nextOnboardingStep: () => void
   prevOnboardingStep: () => void
@@ -99,14 +101,13 @@ export const useStore = create<AppState>()(
         lifestyle: 'comfortable',
       },
       showAdvancedWarning: false,
+      rehydrationError: false,
       showOnboarding: false,
       onboardingStep: 0,
       onboardingType: null,
 
       setInputs: (partial) => {
         const merged = { ...get().inputs, ...partial }
-        // Defensive: a full-shape import (from JSON) may contain bad values.
-        // Partial slider updates pass through sanitize unchanged.
         const next = sanitizeInputs(merged)
         const { rows, summary } = compute(next)
         set({ inputs: next, rows, summary })
@@ -153,7 +154,6 @@ export const useStore = create<AppState>()(
 
       switchToIntermediate: () => {
         const { simpleModeInputs, mode } = get()
-        // Only remap inputs if coming from simple mode
         if (mode === 'simple') {
           const lifestylePct = simpleModeInputs.lifestyle === 'necessities' ? 0.50 : simpleModeInputs.lifestyle === 'comfortable' ? 0.65 : 0.80
           const mapped = mapSimpleToFull(simpleModeInputs, lifestylePct)
@@ -191,6 +191,7 @@ export const useStore = create<AppState>()(
       },
 
       dismissAdvancedWarning: () => set({ showAdvancedWarning: false }),
+      dismissRehydrationError: () => set({ rehydrationError: false }),
 
       dismissOnboarding: () => set({ showOnboarding: false, onboardingStep: 0, onboardingType: null }),
 
@@ -229,8 +230,6 @@ export const useStore = create<AppState>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return
         try {
-          // Final guard — even after migrate, we recompute through sanitize so
-          // a corrupted blob can never reach the engine with a malformed shape.
           state.inputs = sanitizeInputs(state.inputs)
           const { rows, summary } = compute(state.inputs)
           state.rows = rows
@@ -241,6 +240,7 @@ export const useStore = create<AppState>()(
           state.inputs = sanitizeInputs(null)
           state.rows = rows
           state.summary = summary
+          state.rehydrationError = true
         }
       },
     }

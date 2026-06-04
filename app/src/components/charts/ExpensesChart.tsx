@@ -1,16 +1,18 @@
+import { useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend, ReferenceLine
 } from 'recharts'
 import { useStore } from '../../store/useStore'
 import { fmtCurrency } from '../../utils/formatters'
+import type { ChartTooltipProps } from '../../utils/chartTypes'
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
       <div className="text-slate-300 font-medium mb-1">Age {label}</div>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.fill || p.color }}>{p.name}</span>
           <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
@@ -23,8 +25,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ExpensesChart() {
   const { rows, inputs } = useStore()
 
-  // Only show pre-retirement for clarity
-  const data = rows
+  const data = useMemo(() => rows
     .filter(r => r.age <= inputs.retirementAge + 5)
     .map(r => ({
       age: r.age,
@@ -32,7 +33,7 @@ export function ExpensesChart() {
       milestones: Math.round(r.milestoneCost),
       debt: Math.round(r.debtPayments),
       income: Math.round(r.postTaxIncome),
-    }))
+    })), [rows, inputs.retirementAge])
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">

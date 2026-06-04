@@ -105,7 +105,7 @@ export function MonteCarloChart() {
               <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 11 }} />
               <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => fmtCurrency(v, true)} width={65} />
               <Tooltip
-                formatter={(v: any) => fmtCurrency(v, true)}
+                formatter={(v) => fmtCurrency(v != null ? Number(v) : 0, true)}
                 contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: '#cbd5e1' }}
                 labelFormatter={v => `Age ${v}`}

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { useStore } from './store/useStore'
 import { SimpleModeView } from './components/simple/SimpleModeView'
 import { ModeToggle } from './components/layout/ModeToggle'
@@ -7,19 +8,26 @@ import { SectionWrapper } from './components/layout/SectionWrapper'
 import { SummaryCards } from './components/dashboard/SummaryCards'
 import { ParameterForm } from './components/inputs/ParameterForm'
 import { IntermediateParameterForm } from './components/inputs/IntermediateParameterForm'
-import { ProjectionsTable } from './components/tables/ProjectionsTable'
-import { NetWorthChart } from './components/charts/NetWorthChart'
-import { AssetBreakdownChart } from './components/charts/AssetBreakdownChart'
-import { ExpensesChart } from './components/charts/ExpensesChart'
-import { GlidepathChart } from './components/charts/GlidepathChart'
-import { DrawdownChart } from './components/charts/DrawdownChart'
-import { MilestoneManager } from './components/inputs/MilestoneManager'
-import { DebtManager } from './components/inputs/DebtManager'
-import { IncomeEventManager } from './components/inputs/IncomeEventManager'
-import { ScenarioPanel } from './components/scenarios/ScenarioPanel'
-import { MonteCarloChart } from './components/charts/MonteCarloChart'
-import { exportCSV, exportJSON } from './utils/exporters'
 import { OnboardingTutorial } from './components/onboarding/OnboardingTutorial'
+import { exportCSV, exportJSON } from './utils/exporters'
+
+// Lazy-loaded heavy components — Vite emits a separate chunk for each,
+// so recharts and the Monte Carlo engine are not in the initial bundle.
+const ProjectionsTable = lazy(() => import('./components/tables/ProjectionsTable').then(m => ({ default: m.ProjectionsTable })))
+const NetWorthChart = lazy(() => import('./components/charts/NetWorthChart').then(m => ({ default: m.NetWorthChart })))
+const AssetBreakdownChart = lazy(() => import('./components/charts/AssetBreakdownChart').then(m => ({ default: m.AssetBreakdownChart })))
+const ExpensesChart = lazy(() => import('./components/charts/ExpensesChart').then(m => ({ default: m.ExpensesChart })))
+const GlidepathChart = lazy(() => import('./components/charts/GlidepathChart').then(m => ({ default: m.GlidepathChart })))
+const DrawdownChart = lazy(() => import('./components/charts/DrawdownChart').then(m => ({ default: m.DrawdownChart })))
+const MilestoneManager = lazy(() => import('./components/inputs/MilestoneManager').then(m => ({ default: m.MilestoneManager })))
+const DebtManager = lazy(() => import('./components/inputs/DebtManager').then(m => ({ default: m.DebtManager })))
+const IncomeEventManager = lazy(() => import('./components/inputs/IncomeEventManager').then(m => ({ default: m.IncomeEventManager })))
+const ScenarioPanel = lazy(() => import('./components/scenarios/ScenarioPanel').then(m => ({ default: m.ScenarioPanel })))
+const MonteCarloChart = lazy(() => import('./components/charts/MonteCarloChart').then(m => ({ default: m.MonteCarloChart })))
+
+function ChartFallback() {
+  return <div className="h-80 bg-slate-800 border border-slate-700 rounded-xl animate-pulse" />
+}
 
 function ExportBar() {
   const { rows, inputs, scenarios } = useStore()
@@ -54,8 +62,6 @@ function ExportBar() {
                   alert('Invalid file: missing "inputs" field')
                   return
                 }
-                // setInputs runs the data through sanitizeInputs, so any bad
-                // fields silently fall back to defaults rather than crash.
                 useStore.getState().setInputs(data.inputs)
               } catch { alert('Invalid JSON file') }
             }
@@ -67,18 +73,25 @@ function ExportBar() {
   )
 }
 
-function ScenarioNetWorthSection() {
-  const { scenarios } = useStore()
-  if (scenarios.length === 0) return null
+function RehydrationErrorBanner() {
+  const { dismissRehydrationError } = useStore()
   return (
-    <div className="mt-6">
-      <NetWorthChart />
+    <div className="bg-amber-900/50 border border-amber-700 rounded-xl p-4 flex items-center justify-between gap-4">
+      <p className="text-amber-200 text-sm">
+        Your saved settings could not be loaded and were reset to defaults. Your previous data may have been corrupted.
+      </p>
+      <button
+        onClick={dismissRehydrationError}
+        className="text-amber-400 hover:text-amber-200 text-xs whitespace-nowrap transition-colors"
+      >
+        Dismiss
+      </button>
     </div>
   )
 }
 
 export default function App() {
-  const { activeSection, mode } = useStore()
+  const { activeSection, mode, showAdvancedWarning, rehydrationError } = useStore()
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -98,11 +111,13 @@ export default function App() {
             </div>
           </div>
 
+          {rehydrationError && <RehydrationErrorBanner />}
+
           {mode === 'simple' && <SimpleModeView />}
 
           {mode === 'intermediate' && (
             <>
-              {!false && <AdvancedWarningBanner />}
+              {showAdvancedWarning && <AdvancedWarningBanner />}
               {activeSection === 'dashboard' && (
                 <SectionWrapper title="Dashboard" subtitle="Key metrics from your current projection">
                   <SummaryCards />
@@ -115,15 +130,17 @@ export default function App() {
               )}
               {activeSection === 'projections' && (
                 <SectionWrapper title="Year-by-Year Projections" subtitle="Toggle nominal vs inflation-adjusted values">
-                  <ProjectionsTable />
+                  <Suspense fallback={<ChartFallback />}>
+                    <ProjectionsTable />
+                  </Suspense>
                 </SectionWrapper>
               )}
               {activeSection === 'charts' && (
                 <SectionWrapper title="Visualizations">
                   <div className="space-y-6">
-                    <NetWorthChart />
-                    <AssetBreakdownChart />
-                    <DrawdownChart />
+                    <Suspense fallback={<ChartFallback />}><NetWorthChart /></Suspense>
+                    <Suspense fallback={<ChartFallback />}><AssetBreakdownChart /></Suspense>
+                    <Suspense fallback={<ChartFallback />}><DrawdownChart /></Suspense>
                   </div>
                 </SectionWrapper>
               )}
@@ -148,20 +165,22 @@ export default function App() {
 
               {activeSection === 'projections' && (
                 <SectionWrapper title="Year-by-Year Projections" subtitle="Toggle nominal vs inflation-adjusted values">
-                  <ProjectionsTable />
+                  <Suspense fallback={<ChartFallback />}>
+                    <ProjectionsTable />
+                  </Suspense>
                 </SectionWrapper>
               )}
 
               {activeSection === 'charts' && (
                 <SectionWrapper title="Visualizations">
                   <div className="space-y-6">
-                    <NetWorthChart />
-                    <AssetBreakdownChart />
+                    <Suspense fallback={<ChartFallback />}><NetWorthChart /></Suspense>
+                    <Suspense fallback={<ChartFallback />}><AssetBreakdownChart /></Suspense>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <GlidepathChart />
-                      <ExpensesChart />
+                      <Suspense fallback={<ChartFallback />}><GlidepathChart /></Suspense>
+                      <Suspense fallback={<ChartFallback />}><ExpensesChart /></Suspense>
                     </div>
-                    <DrawdownChart />
+                    <Suspense fallback={<ChartFallback />}><DrawdownChart /></Suspense>
                   </div>
                 </SectionWrapper>
               )}
@@ -171,13 +190,17 @@ export default function App() {
                   title="Life Milestones"
                   subtitle="Enter costs in today's dollars — automatically inflation-adjusted to target age"
                 >
-                  <MilestoneManager />
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                    <MilestoneManager />
+                  </Suspense>
                 </SectionWrapper>
               )}
 
               {activeSection === 'debts' && (
                 <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
-                  <DebtManager />
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                    <DebtManager />
+                  </Suspense>
                 </SectionWrapper>
               )}
 
@@ -186,20 +209,28 @@ export default function App() {
                   title="Income Events"
                   subtitle="One-time windfalls: bonuses, RSU vests, inheritances, home sale proceeds"
                 >
-                  <IncomeEventManager />
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                    <IncomeEventManager />
+                  </Suspense>
                 </SectionWrapper>
               )}
 
               {activeSection === 'scenarios' && (
                 <SectionWrapper title="Scenario Analysis" subtitle="Compare preset and custom scenarios side by side">
-                  <ScenarioPanel />
-                  <ScenarioNetWorthSection />
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                    <ScenarioPanel />
+                  </Suspense>
+                  <div className="mt-6">
+                    <Suspense fallback={<ChartFallback />}><NetWorthChart /></Suspense>
+                  </div>
                 </SectionWrapper>
               )}
 
               {activeSection === 'montecarlo' && (
                 <SectionWrapper title="Monte Carlo Simulation" subtitle="Probabilistic outcomes across thousands of randomized market scenarios">
-                  <MonteCarloChart />
+                  <Suspense fallback={<ChartFallback />}>
+                    <MonteCarloChart />
+                  </Suspense>
                 </SectionWrapper>
               )}
             </>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useStore } from '../../store/useStore'
 import { fmtCurrency } from '../../utils/formatters'
-import { NetWorthChart } from '../charts/NetWorthChart'
+import { lazy, Suspense } from 'react'
+const NetWorthChart = lazy(() => import('../charts/NetWorthChart').then(m => ({ default: m.NetWorthChart })))
 
 const LIFESTYLE_OPTIONS = [
   {
@@ -164,7 +165,9 @@ export function SimpleModeView() {
       </div>
 
       {/* Chart */}
-      <NetWorthChart />
+      <Suspense fallback={<div className="h-80 bg-slate-800 border border-slate-700 rounded-xl animate-pulse" />}>
+        <NetWorthChart />
+      </Suspense>
 
       {/* Switch to Advanced CTA */}
       <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center space-y-3">
