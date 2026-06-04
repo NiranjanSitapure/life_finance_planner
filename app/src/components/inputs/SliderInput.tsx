@@ -22,7 +22,7 @@ export function SliderInput({ label, value, min, max, step, format, onChange, hi
     <div className="space-y-1.5">
       <div className="flex justify-between items-baseline">
         <div className="flex items-center gap-1.5">
-          <label className="text-slate-300 text-sm">{label}</label>
+          <label className="text-gray-700 text-sm">{label}</label>
           {tooltip && <InfoTooltip content={tooltip} />}
         </div>
         {warning && <span className="text-yellow-400 text-xs">{warning}</span>}
@@ -35,7 +35,7 @@ export function SliderInput({ label, value, min, max, step, format, onChange, hi
           step={step}
           value={value}
           onChange={e => onChange(parseFloat(e.target.value))}
-          className="flex-1 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-teal-500"
+          className="flex-1 h-1.5 bg-gray-200 rounded appearance-none cursor-pointer accent-indigo-500"
         />
         <input
           type="text"
@@ -47,10 +47,10 @@ export function SliderInput({ label, value, min, max, step, format, onChange, hi
             if (!isNaN(n)) onChange(Math.min(max, Math.max(min, n)))
           }}
           onChange={e => setRaw(e.target.value)}
-          className="w-24 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-right text-sm font-mono-nums text-slate-100 focus:outline-none focus:border-teal-500"
+          className="w-24 bg-white border border-gray-300 rounded px-2 py-1 text-right text-sm font-mono-nums text-gray-900 focus:outline-none focus:border-indigo-500"
         />
       </div>
-      {hint && <div className="text-slate-600 text-xs">{hint}</div>}
+      {hint && <div className="text-gray-400 text-xs">{hint}</div>}
     </div>
   )
 }

@@ -8,15 +8,15 @@ function Section({ title, children, defaultOpen = true }: {
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex justify-between items-center px-5 py-4 text-left text-slate-200 font-medium hover:bg-slate-750 transition-colors"
+        className="w-full flex justify-between items-center px-5 py-4 text-left text-gray-800 font-medium hover:bg-gray-50 transition-colors"
       >
         {title}
-        <span className="text-slate-500 text-sm">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-400 text-sm">{open ? '▲' : '▼'}</span>
       </button>
-      {open && <div className="px-5 pb-5 space-y-5 border-t border-slate-700 pt-4">{children}</div>}
+      {open && <div className="px-5 pb-5 space-y-5 border-t border-gray-200 pt-4">{children}</div>}
     </div>
   )
 }
@@ -104,10 +104,10 @@ export function IntermediateParameterForm() {
 
       <Section title="Social Security" defaultOpen={false}>
         <div className="flex items-center justify-between">
-          <label className="text-slate-300 text-sm">Include Social Security</label>
+          <label className="text-gray-700 text-sm">Include Social Security</label>
           <button
             onClick={() => setInputs({ socialSecurityEnabled: !inputs.socialSecurityEnabled })}
-            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.socialSecurityEnabled ? 'bg-teal-600' : 'bg-slate-600'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.socialSecurityEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
           >
             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inputs.socialSecurityEnabled ? 'left-6' : 'left-1'}`} />
           </button>

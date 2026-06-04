@@ -31,13 +31,13 @@ export function IntermediateWizard() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-      <div className={`bg-slate-800 border rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] transition-all ${isLast ? 'border-teal-600' : 'border-slate-600'}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div className={`bg-white border rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] transition-all ${isLast ? 'border-emerald-400' : 'border-gray-200'}`}>
 
         {/* Progress bar */}
-        <div className="h-1.5 bg-slate-700 rounded-t-2xl overflow-hidden shrink-0">
+        <div className="h-1.5 bg-gray-100 rounded-t-2xl overflow-hidden shrink-0">
           <div
-            className={`h-full transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-teal-500'}`}
+            className={`h-full transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-indigo-500'}`}
             style={{ width: `${((onboardingStep + 1) / STEPS.length) * 100}%` }}
           />
         </div>
@@ -45,10 +45,10 @@ export function IntermediateWizard() {
         <div className="p-6 space-y-5 overflow-y-auto">
           {/* Top row */}
           <div className="flex items-center justify-between">
-            <span className="text-slate-500 text-xs">{onboardingStep + 1} of {STEPS.length}</span>
+            <span className="text-gray-400 text-xs">{onboardingStep + 1} of {STEPS.length}</span>
             <button
               onClick={dismissOnboarding}
-              className="text-slate-500 hover:text-slate-300 text-sm transition-colors p-1 rounded-lg hover:bg-slate-700"
+              className="text-gray-400 hover:text-gray-700 text-sm transition-colors p-1 rounded-lg hover:bg-gray-100"
             >
               ✕ Skip
             </button>
@@ -62,10 +62,10 @@ export function IntermediateWizard() {
                 onClick={() => i < onboardingStep && useStore.setState({ onboardingStep: i })}
                 className={`rounded-full transition-all duration-300 ${
                   i === onboardingStep
-                    ? 'w-6 h-2 bg-teal-400'
+                    ? 'w-6 h-2 bg-indigo-500'
                     : i < onboardingStep
-                    ? 'w-2 h-2 bg-teal-700 hover:bg-teal-600 cursor-pointer'
-                    : 'w-2 h-2 bg-slate-600'
+                    ? 'w-2 h-2 bg-indigo-300 hover:bg-indigo-400 cursor-pointer'
+                    : 'w-2 h-2 bg-gray-200'
                 }`}
               />
             ))}
@@ -74,10 +74,10 @@ export function IntermediateWizard() {
           {/* Header */}
           <div className="text-center space-y-1">
             <div className="text-4xl">{step.icon}</div>
-            <h3 className={`text-xl font-semibold ${isLast ? 'text-emerald-400' : 'text-slate-100'}`}>
+            <h3 className={`text-xl font-semibold ${isLast ? 'text-emerald-600' : 'text-gray-900'}`}>
               {step.title}
             </h3>
-            {step.subtitle && <p className="text-slate-400 text-sm">{step.subtitle}</p>}
+            {step.subtitle && <p className="text-gray-500 text-sm">{step.subtitle}</p>}
           </div>
 
           {/* Step content */}
@@ -159,18 +159,18 @@ export function IntermediateWizard() {
             {onboardingStep === 5 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-700/50 rounded-xl p-4 text-center">
-                    <div className="text-slate-400 text-xs mb-1">Nest Egg at Retirement</div>
-                    <div className="text-teal-400 font-mono-nums text-xl font-bold">{fmtCurrency(retirementNW, true)}</div>
-                    <div className="text-slate-500 text-xs mt-1">at age {inputs.retirementAge}</div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                    <div className="text-gray-500 text-xs mb-1">Nest Egg at Retirement</div>
+                    <div className="text-indigo-600 font-mono-nums text-xl font-bold">{fmtCurrency(retirementNW, true)}</div>
+                    <div className="text-gray-400 text-xs mt-1">at age {inputs.retirementAge}</div>
                   </div>
-                  <div className="bg-slate-700/50 rounded-xl p-4 text-center">
-                    <div className="text-slate-400 text-xs mb-1">Monthly Income</div>
-                    <div className="text-emerald-400 font-mono-nums text-xl font-bold">{fmtCurrency(monthlyIncome, true)}</div>
-                    <div className="text-slate-500 text-xs mt-1">4% withdrawal</div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                    <div className="text-gray-500 text-xs mb-1">Monthly Income</div>
+                    <div className="text-emerald-600 font-mono-nums text-xl font-bold">{fmtCurrency(monthlyIncome, true)}</div>
+                    <div className="text-gray-400 text-xs mt-1">4% withdrawal</div>
                   </div>
                 </div>
-                <p className="text-slate-400 text-sm text-center leading-relaxed">
+                <p className="text-gray-500 text-sm text-center leading-relaxed">
                   Your projection is ready. Head to Charts and Projections to explore the full picture — or adjust any number in Parameters.
                 </p>
               </div>
@@ -182,14 +182,14 @@ export function IntermediateWizard() {
             <button
               onClick={prevOnboardingStep}
               disabled={isFirst}
-              className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm transition-colors disabled:opacity-0 disabled:cursor-default"
+              className="px-4 py-2 text-gray-400 hover:text-gray-700 text-sm transition-colors disabled:opacity-0 disabled:cursor-default"
             >
               ← Back
             </button>
             <button
               onClick={handleNext}
               className={`flex-1 py-2.5 text-white text-sm font-medium rounded-xl transition-colors ${
-                isLast ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-teal-600 hover:bg-teal-500'
+                isLast ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'
               }`}
             >
               {isLast ? 'Start exploring →' : 'Next →'}

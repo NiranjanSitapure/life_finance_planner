@@ -10,12 +10,12 @@ import type { ChartTooltipProps } from '../../utils/chartTypes'
 const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
-      <div className="text-slate-300 font-medium mb-1">Age {label}</div>
+    <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs space-y-1 shadow-xl">
+      <div className="text-gray-700 font-medium mb-1">Age {label}</div>
       {payload.map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
-          <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
+          <span className="font-mono-nums text-gray-900">{fmtCurrency(p.value, true)}</span>
         </div>
       ))}
     </div>
@@ -37,23 +37,23 @@ export function NetWorthChart() {
   )
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-slate-200 font-medium">Net Worth Over Time</h3>
-        <div className="text-slate-500 text-xs">Inflation-adjusted in gray</div>
+        <h3 className="text-gray-800 font-medium">Net Worth Over Time</h3>
+        <div className="text-gray-400 text-xs">Inflation-adjusted in gray</div>
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="age" stroke="#9ca3af" tick={{ fontSize: 11 }} />
           <YAxis
-            stroke="#64748b"
+            stroke="#9ca3af"
             tick={{ fontSize: 11 }}
             tickFormatter={v => fmtCurrency(v, true)}
             width={65}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
+          <Legend wrapperStyle={{ fontSize: 12, color: '#6b7280' }} />
 
           <ReferenceLine
             y={summary.fireNumber}
@@ -63,9 +63,9 @@ export function NetWorthChart() {
           />
           <ReferenceLine
             x={inputs.retirementAge}
-            stroke="#14b8a6"
+            stroke="#6366f1"
             strokeDasharray="4 4"
-            label={{ value: 'Retire', fill: '#14b8a6', fontSize: 10, position: 'insideTopLeft' }}
+            label={{ value: 'Retire', fill: '#6366f1', fontSize: 10, position: 'insideTopLeft' }}
           />
           {milestoneAges.map(a => (
             <ReferenceLine key={a} x={a} stroke="#f59e0b" strokeDasharray="2 4" strokeOpacity={0.5} />
@@ -84,8 +84,8 @@ export function NetWorthChart() {
               strokeDasharray="4 2"
             />
           ))}
-          <Line type="monotone" dataKey="real" name="Real (today's $)" stroke="#64748b" strokeWidth={1.5} dot={false} />
-          <Line type="monotone" dataKey="nominal" name="Nominal" stroke="#14b8a6" strokeWidth={2.5} dot={false} />
+          <Line type="monotone" dataKey="real" name="Real (today's $)" stroke="#9ca3af" strokeWidth={1.5} dot={false} />
+          <Line type="monotone" dataKey="nominal" name="Nominal" stroke="#6366f1" strokeWidth={2.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -7,18 +7,18 @@ import { InfoTooltip } from '../ui/InfoTooltip'
 function Section({ title, children, defaultOpen = true, tooltip }: { title: string; children: React.ReactNode; defaultOpen?: boolean; tooltip?: string }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex justify-between items-center px-5 py-4 text-left text-slate-200 font-medium hover:bg-slate-750 transition-colors"
+        className="w-full flex justify-between items-center px-5 py-4 text-left text-gray-800 font-medium hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-1.5">
           {title}
           {tooltip && <InfoTooltip content={tooltip} />}
         </div>
-        <span className="text-slate-500 text-sm">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-400 text-sm">{open ? '▲' : '▼'}</span>
       </button>
-      {open && <div className="px-5 pb-5 space-y-5 border-t border-slate-700 pt-4">{children}</div>}
+      {open && <div className="px-5 pb-5 space-y-5 border-t border-gray-200 pt-4">{children}</div>}
     </div>
   )
 }
@@ -43,17 +43,17 @@ export function ParameterForm() {
           placeholder="Scenario name..."
           value={scenarioName}
           onChange={e => setScenarioName(e.target.value)}
-          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+          className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500"
         />
         <button
           onClick={handleSave}
-          className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm rounded-lg transition-colors"
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg transition-colors"
         >
           Save Scenario
         </button>
         <button
           onClick={resetInputs}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
+          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
         >
           Reset
         </button>
@@ -68,12 +68,12 @@ export function ParameterForm() {
           tooltip="The age you plan to stop working. Every year earlier you retire means more years your portfolio must support you." />
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <label className="text-slate-300 text-sm">Filing Status</label>
+            <label className="text-gray-700 text-sm">Filing Status</label>
             <InfoTooltip content="Affects your Roth IRA income limits. Married filing jointly has higher phase-out thresholds ($230K vs $146K for single)." />
           </div>
           <select value={inputs.filingStatus}
             onChange={e => setInputs({ filingStatus: e.target.value as 'single' | 'married' })}
-            className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500">
+            className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500">
             <option value="single">Single</option>
             <option value="married">Married / MFJ</option>
           </select>
@@ -145,12 +145,12 @@ export function ParameterForm() {
         />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <label className="text-slate-300 text-sm">Enable Backdoor Roth</label>
+            <label className="text-gray-700 text-sm">Enable Backdoor Roth</label>
             <InfoTooltip content="A legal strategy for high earners who exceed the Roth IRA income limits. You contribute to a Traditional IRA (no income limit) and immediately convert it to Roth. Enables Roth benefits regardless of income." />
           </div>
           <button
             onClick={() => setInputs({ backdoorRoth: !inputs.backdoorRoth })}
-            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.backdoorRoth ? 'bg-teal-600' : 'bg-slate-600'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.backdoorRoth ? 'bg-indigo-600' : 'bg-gray-300'}`}
           >
             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inputs.backdoorRoth ? 'left-6' : 'left-1'}`} />
           </button>
@@ -201,7 +201,7 @@ export function ParameterForm() {
         <SliderInput label="Discretionary Scale (% of income above $100K)" value={inputs.discretionaryPct} min={0} max={0.30} step={0.01}
           format={v => fmtPct(v)} onChange={v => setInputs({ discretionaryPct: v })}
           tooltip="The extra lifestyle spending you add for every dollar you earn above $100K. At 10%, earning $200K means $10K more in discretionary spending vs earning $100K." />
-        <div className="text-slate-400 text-xs font-medium pt-1">Retirement Spending — Smile Curve</div>
+        <div className="text-gray-500 text-xs font-medium pt-1">Retirement Spending — Smile Curve</div>
         <SliderInput label="Active Phase (age retire → +10 yrs)" value={inputs.retirementSpendingEarly} min={0.40} max={1.20} step={0.05}
           format={v => fmtPct(v)} onChange={v => setInputs({ retirementSpendingEarly: v })}
           hint="Travel, hobbies — typically highest spending"
@@ -235,10 +235,10 @@ export function ParameterForm() {
 
       <Section title="Social Security" defaultOpen={false}>
         <div className="flex items-center justify-between">
-          <label className="text-slate-300 text-sm">Enable Social Security</label>
+          <label className="text-gray-700 text-sm">Enable Social Security</label>
           <button
             onClick={() => setInputs({ socialSecurityEnabled: !inputs.socialSecurityEnabled })}
-            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.socialSecurityEnabled ? 'bg-teal-600' : 'bg-slate-600'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.socialSecurityEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
           >
             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inputs.socialSecurityEnabled ? 'left-6' : 'left-1'}`} />
           </button>
@@ -279,18 +279,18 @@ export function ParameterForm() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <label className="text-slate-300 text-sm">Enable RMD Modeling</label>
-            <div className="text-slate-500 text-xs mt-0.5">IRS forces 401(k) withdrawals starting at age 73</div>
+            <label className="text-gray-700 text-sm">Enable RMD Modeling</label>
+            <div className="text-gray-400 text-xs mt-0.5">IRS forces 401(k) withdrawals starting at age 73</div>
           </div>
           <button
             onClick={() => setInputs({ rmdEnabled: !inputs.rmdEnabled })}
-            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.rmdEnabled ? 'bg-teal-600' : 'bg-slate-600'}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${inputs.rmdEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
           >
             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${inputs.rmdEnabled ? 'left-6' : 'left-1'}`} />
           </button>
         </div>
         {inputs.rmdEnabled && (
-          <div className="bg-slate-700/50 rounded-lg p-3 text-xs text-slate-400">
+          <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
             RMD = 401(k) balance ÷ IRS life expectancy factor. Withdrawals are taxed as ordinary income.
             Any surplus beyond spending needs is reinvested in taxable brokerage.
           </div>

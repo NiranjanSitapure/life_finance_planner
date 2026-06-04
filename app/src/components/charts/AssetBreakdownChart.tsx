@@ -11,7 +11,7 @@ const COLORS = {
   k401: '#6366f1',
   rothIRA: '#8b5cf6',
   hsa: '#ec4899',
-  stocks: '#14b8a6',
+  stocks: '#10b981',
   bonds: '#3b82f6',
   cash: '#f59e0b',
 }
@@ -20,17 +20,17 @@ const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value || 0), 0)
   return (
-    <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-xs space-y-1 shadow-xl">
-      <div className="text-slate-300 font-medium mb-1">Age {label}</div>
+    <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs space-y-1 shadow-xl">
+      <div className="text-gray-700 font-medium mb-1">Age {label}</div>
       {[...payload].reverse().map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
           <span style={{ color: p.fill }}>{p.name}</span>
-          <span className="font-mono-nums text-slate-100">{fmtCurrency(p.value, true)}</span>
+          <span className="font-mono-nums text-gray-900">{fmtCurrency(p.value, true)}</span>
         </div>
       ))}
-      <div className="border-t border-slate-600 pt-1 flex justify-between gap-4 font-medium">
-        <span className="text-slate-300">Total</span>
-        <span className="font-mono-nums text-teal-400">{fmtCurrency(total, true)}</span>
+      <div className="border-t border-gray-200 pt-1 flex justify-between gap-4 font-medium">
+        <span className="text-gray-700">Total</span>
+        <span className="font-mono-nums text-indigo-600">{fmtCurrency(total, true)}</span>
       </div>
     </div>
   )
@@ -50,15 +50,15 @@ export function AssetBreakdownChart() {
   })), [rows])
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-      <h3 className="text-slate-200 font-medium mb-4">Asset Breakdown Over Time</h3>
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <h3 className="text-gray-800 font-medium mb-4">Asset Breakdown Over Time</h3>
       <ResponsiveContainer width="100%" height={320}>
         <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 11 }} />
-          <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={v => fmtCurrency(v, true)} width={65} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="age" stroke="#9ca3af" tick={{ fontSize: 11 }} />
+          <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} tickFormatter={v => fmtCurrency(v, true)} width={65} />
           <Tooltip content={<CustomTooltip />} />
-          <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: '#6b7280' }} />
           <Area type="monotone" dataKey="k401" name="401(k)" stackId="1" fill={COLORS.k401} stroke={COLORS.k401} fillOpacity={0.85} />
           <Area type="monotone" dataKey="rothIRA" name="Roth IRA" stackId="1" fill={COLORS.rothIRA} stroke={COLORS.rothIRA} fillOpacity={0.85} />
           <Area type="monotone" dataKey="hsa" name="HSA" stackId="1" fill={COLORS.hsa} stroke={COLORS.hsa} fillOpacity={0.85} />
