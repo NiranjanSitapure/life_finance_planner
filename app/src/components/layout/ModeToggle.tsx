@@ -17,15 +17,15 @@ export function ModeToggle() {
   }
 
   return (
-    <div className="flex items-center bg-slate-800 border border-slate-700 rounded-full p-1 gap-0.5">
+    <div className="flex items-center bg-white border border-gray-200 rounded-full p-1 gap-0.5">
       {MODES.map(m => (
         <button
           key={m.id}
           onClick={handlers[m.id]}
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
             mode === m.id
-              ? 'bg-teal-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow'
+              : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           {m.label}

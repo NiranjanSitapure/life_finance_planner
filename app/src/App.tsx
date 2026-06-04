@@ -27,7 +27,7 @@ const ScenarioPanel = lazy(() => import('./components/scenarios/ScenarioPanel').
 const MonteCarloChart = lazy(() => import('./components/charts/MonteCarloChart').then(m => ({ default: m.MonteCarloChart })))
 
 function ChartFallback() {
-  return <div className="h-80 bg-slate-800 border border-slate-700 rounded-xl animate-pulse" />
+  return <div className="h-80 bg-white border border-gray-200 rounded-xl animate-pulse" />
 }
 
 function ExportBar() {
@@ -36,17 +36,17 @@ function ExportBar() {
     <div className="flex flex-wrap gap-2">
       <button
         onClick={() => exportCSV(rows)}
-        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 text-xs rounded-lg transition-colors"
+        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-xs rounded-lg transition-colors"
       >
         ↓ CSV
       </button>
       <button
         onClick={() => exportJSON({ inputs, scenarios })}
-        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 text-xs rounded-lg transition-colors"
+        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-xs rounded-lg transition-colors"
       >
         ↓ JSON
       </button>
-      <label className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 text-xs rounded-lg transition-colors cursor-pointer">
+      <label className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-xs rounded-lg transition-colors cursor-pointer">
         ↑ Import
         <input
           type="file"
@@ -77,13 +77,13 @@ function ExportBar() {
 function RehydrationErrorBanner() {
   const { dismissRehydrationError } = useStore()
   return (
-    <div className="bg-amber-900/50 border border-amber-700 rounded-xl p-4 flex items-center justify-between gap-4">
-      <p className="text-amber-200 text-sm">
+    <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-center justify-between gap-4">
+      <p className="text-amber-800 text-sm">
         Your saved settings could not be loaded and were reset to defaults. Your previous data may have been corrupted.
       </p>
       <button
         onClick={dismissRehydrationError}
-        className="text-amber-400 hover:text-amber-200 text-xs whitespace-nowrap transition-colors"
+        className="text-amber-600 hover:text-amber-800 text-xs whitespace-nowrap transition-colors"
       >
         Dismiss
       </button>
@@ -95,7 +95,7 @@ export default function App() {
   const { activeSection, mode, showAdvancedWarning, rehydrationError, hasSeenWelcome } = useStore()
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gray-50">
       {!hasSeenWelcome && <WelcomeDialog />}
       <OnboardingTutorial />
       <Sidebar />
@@ -104,8 +104,8 @@ export default function App() {
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-100">Life Finance Planner</h1>
-              <p className="text-slate-500 text-sm mt-1">Lifetime projections — all computed locally in your browser</p>
+              <h1 className="text-2xl font-bold text-gray-900">Life Finance Planner</h1>
+              <p className="text-gray-400 text-sm mt-1">Lifetime projections — all computed locally in your browser</p>
             </div>
             <div className="flex items-center gap-3">
               <ModeToggle />
@@ -192,7 +192,7 @@ export default function App() {
                   title="Life Milestones"
                   subtitle="Enter costs in today's dollars — automatically inflation-adjusted to target age"
                 >
-                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-xl" />}>
                     <MilestoneManager />
                   </Suspense>
                 </SectionWrapper>
@@ -200,7 +200,7 @@ export default function App() {
 
               {activeSection === 'debts' && (
                 <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
-                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-xl" />}>
                     <DebtManager />
                   </Suspense>
                 </SectionWrapper>
@@ -211,7 +211,7 @@ export default function App() {
                   title="Income Events"
                   subtitle="One-time windfalls: bonuses, RSU vests, inheritances, home sale proceeds"
                 >
-                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-xl" />}>
                     <IncomeEventManager />
                   </Suspense>
                 </SectionWrapper>
@@ -219,7 +219,7 @@ export default function App() {
 
               {activeSection === 'scenarios' && (
                 <SectionWrapper title="Scenario Analysis" subtitle="Compare preset and custom scenarios side by side">
-                  <Suspense fallback={<div className="h-40 animate-pulse bg-slate-800 rounded-xl" />}>
+                  <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-xl" />}>
                     <ScenarioPanel />
                   </Suspense>
                   <div className="mt-6">
