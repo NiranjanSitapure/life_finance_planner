@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { ModelInputs, ProjectionRow, ModelSummary, ScenarioResult, MonteCarloResult } from '../engine/types'
 import { DEFAULT_INPUTS } from '../engine/defaults'
 import { runProjection } from '../engine/model'
+import { sanitizeInputs, migratePersistedState, CURRENT_SCHEMA_VERSION } from '../engine/validate'
 import { nanoid } from '../utils/nanoid'
 
 const PRESET_COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6']
@@ -103,7 +104,10 @@ export const useStore = create<AppState>()(
       onboardingType: null,
 
       setInputs: (partial) => {
-        const next = { ...get().inputs, ...partial }
+        const merged = { ...get().inputs, ...partial }
+        // Defensive: a full-shape import (from JSON) may contain bad values.
+        // Partial slider updates pass through sanitize unchanged.
+        const next = sanitizeInputs(merged)
         const { rows, summary } = compute(next)
         set({ inputs: next, rows, summary })
       },
@@ -207,6 +211,10 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'life-finance-planner',
+      version: CURRENT_SCHEMA_VERSION,
+      migrate: (persistedState, fromVersion) => {
+        return migratePersistedState(persistedState, fromVersion) as AppState
+      },
       partialize: (state) => ({
         inputs: state.inputs,
         scenarios: state.scenarios,
@@ -219,8 +227,18 @@ export const useStore = create<AppState>()(
         onboardingType: state.onboardingType,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state) {
+        if (!state) return
+        try {
+          // Final guard — even after migrate, we recompute through sanitize so
+          // a corrupted blob can never reach the engine with a malformed shape.
+          state.inputs = sanitizeInputs(state.inputs)
           const { rows, summary } = compute(state.inputs)
+          state.rows = rows
+          state.summary = summary
+        } catch (err) {
+          console.error('[useStore] rehydration failed; resetting to defaults', err)
+          const { rows, summary } = compute(sanitizeInputs(null))
+          state.inputs = sanitizeInputs(null)
           state.rows = rows
           state.summary = summary
         }

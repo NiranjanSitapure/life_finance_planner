@@ -50,7 +50,13 @@ function ExportBar() {
             reader.onload = ev => {
               try {
                 const data = JSON.parse(ev.target?.result as string)
-                if (data.inputs) useStore.getState().setInputs(data.inputs)
+                if (!data || typeof data !== 'object' || !data.inputs) {
+                  alert('Invalid file: missing "inputs" field')
+                  return
+                }
+                // setInputs runs the data through sanitizeInputs, so any bad
+                // fields silently fall back to defaults rather than crash.
+                useStore.getState().setInputs(data.inputs)
               } catch { alert('Invalid JSON file') }
             }
             reader.readAsText(file)
