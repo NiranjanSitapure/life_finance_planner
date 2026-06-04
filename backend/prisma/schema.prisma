@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  googleId  String   @unique @map("google_id")
+  email     String   @unique
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  config   UserConfig?
+  versions ConfigVersion[]
+
+  @@map("users")
+}
+
+model UserConfig {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputs           Json
+  simpleModeInputs Json?    @map("simple_mode_inputs")
+  scenarios        Json     @default("[]")
+  mode             String   @default("simple")
+  showNominal      Boolean  @default(true) @map("show_nominal")
+  schemaVersion    Int      @default(1) @map("schema_version")
+  savedAt          DateTime @default(now()) @map("saved_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("user_configs")
+}
+
+model ConfigVersion {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshot  Json
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("config_versions")
+}
