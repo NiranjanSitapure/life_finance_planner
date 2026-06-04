@@ -1,4 +1,5 @@
 import React from 'react'
+import { InfoTooltip } from '../ui/InfoTooltip'
 
 interface Props {
   label: string
@@ -10,9 +11,10 @@ interface Props {
   onChange: (v: number) => void
   hint?: string
   warning?: string
+  tooltip?: string
 }
 
-export function SliderInput({ label, value, min, max, step, format, onChange, hint, warning }: Props) {
+export function SliderInput({ label, value, min, max, step, format, onChange, hint, warning, tooltip }: Props) {
   const [raw, setRaw] = React.useState(format(value))
   const [editing, setEditing] = React.useState(false)
 
@@ -23,7 +25,10 @@ export function SliderInput({ label, value, min, max, step, format, onChange, hi
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-baseline">
-        <label className="text-slate-300 text-sm">{label}</label>
+        <div className="flex items-center gap-1.5">
+          <label className="text-slate-300 text-sm">{label}</label>
+          {tooltip && <InfoTooltip content={tooltip} />}
+        </div>
         {warning && <span className="text-yellow-400 text-xs">{warning}</span>}
       </div>
       <div className="flex items-center gap-3">

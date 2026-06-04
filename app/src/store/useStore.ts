@@ -26,6 +26,8 @@ interface AppState {
     lifestyle: 'necessities' | 'comfortable' | 'lavish'
   }
   showAdvancedWarning: boolean
+  showOnboarding: boolean
+  onboardingStep: number
 
   setInputs: (inputs: Partial<ModelInputs>) => void
   resetInputs: () => void
@@ -40,6 +42,8 @@ interface AppState {
   switchToAdvanced: () => void
   switchToSimple: () => void
   dismissAdvancedWarning: () => void
+  dismissOnboarding: () => void
+  nextOnboardingStep: () => void
 }
 
 function compute(inputs: ModelInputs) {
@@ -69,6 +73,8 @@ export const useStore = create<AppState>()(
         lifestyle: 'comfortable',
       },
       showAdvancedWarning: false,
+      showOnboarding: false,
+      onboardingStep: 0,
 
       setInputs: (partial) => {
         const next = { ...get().inputs, ...partial }
@@ -143,12 +149,22 @@ export const useStore = create<AppState>()(
           baseAnnualExpenses: Math.round(salary * lifestylePct),
         }
         const { rows, summary } = compute(advancedInputs)
-        set({ inputs: advancedInputs, rows, summary, isSimpleMode: false, showAdvancedWarning: true })
+        set({ inputs: advancedInputs, rows, summary, isSimpleMode: false, showAdvancedWarning: true, showOnboarding: true, onboardingStep: 0 })
       },
 
       switchToSimple: () => set({ isSimpleMode: true }),
 
       dismissAdvancedWarning: () => set({ showAdvancedWarning: false }),
+
+      dismissOnboarding: () => set({ showOnboarding: false, onboardingStep: 0 }),
+      nextOnboardingStep: () => {
+        const { onboardingStep } = get()
+        if (onboardingStep >= 6) {
+          set({ showOnboarding: false, onboardingStep: 0 })
+        } else {
+          set({ onboardingStep: onboardingStep + 1 })
+        }
+      },
     }),
     {
       name: 'life-finance-planner',
@@ -159,6 +175,8 @@ export const useStore = create<AppState>()(
         isSimpleMode: state.isSimpleMode,
         simpleModeInputs: state.simpleModeInputs,
         showAdvancedWarning: state.showAdvancedWarning,
+        showOnboarding: state.showOnboarding,
+        onboardingStep: state.onboardingStep,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

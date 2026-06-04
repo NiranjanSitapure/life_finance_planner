@@ -18,6 +18,7 @@ import { IncomeEventManager } from './components/inputs/IncomeEventManager'
 import { ScenarioPanel } from './components/scenarios/ScenarioPanel'
 import { MonteCarloChart } from './components/charts/MonteCarloChart'
 import { exportCSV, exportJSON } from './utils/exporters'
+import { OnboardingTutorial } from './components/onboarding/OnboardingTutorial'
 
 function ExportBar() {
   const { rows, inputs, scenarios } = useStore()
@@ -74,6 +75,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-900">
+      <OnboardingTutorial />
       <Sidebar />
       <main className="md:ml-56 pb-20 md:pb-0">
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
