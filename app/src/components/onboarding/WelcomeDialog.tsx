@@ -9,20 +9,20 @@ export function WelcomeDialog() {
         <div className="p-8 space-y-6">
           <div className="text-center space-y-3">
             <div className="text-5xl">📊</div>
-            <h2 className="text-2xl font-bold text-slate-100">Welcome to Life Finance Planner</h2>
+            <h2 className="text-xl font-bold text-slate-100">Life Finance Planner</h2>
           </div>
 
-          <p className="text-slate-300 text-sm leading-relaxed text-center">
-            Plan your entire financial life — from today's savings to retirement. All calculations run privately in your browser; nothing is ever sent to a server.
+          <p className="text-slate-200 text-base font-medium text-center">
+            Can you afford to retire when you want to?
           </p>
 
           <ul className="space-y-2.5">
             {([
-              ['📈', 'Retirement projections — year-by-year net worth to age 90'],
-              ['🏦', 'Account modeling — 401(k), Roth IRA, HSA, brokerage'],
-              ['💳', 'Debt payoff — mortgage, student loans, car payments'],
-              ['🎲', 'Monte Carlo simulation — probability your money lasts'],
-              ['🏠', 'Life milestones — home, college, big purchases'],
+              ['🎯', 'Works on your actual salary, savings, and age — not guesses'],
+              ['🏦', '401(k), Roth IRA, HSA, brokerage — each modeled separately'],
+              ['🏠', 'Plan for the house, the kids\' college, the career break'],
+              ['📉', 'Stress-test against bear markets and high inflation'],
+              ['🔒', 'No login needed — data is never stored'],
             ] as [string, string][]).map(([icon, text]) => (
               <li key={text} className="flex items-start gap-2.5 text-slate-300 text-sm">
                 <span className="mt-0.5 shrink-0">{icon}</span>
