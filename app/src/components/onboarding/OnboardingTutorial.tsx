@@ -1,161 +1,259 @@
 import { useStore } from '../../store/useStore'
 
-const STEPS = [
+const ADVANCED_STEPS = [
   {
-    step: 1,
-    title: "Welcome to Advanced Mode 🎉",
+    icon: '🎯',
+    title: 'Welcome to Advanced Mode',
     section: null,
-    description: `Your settings have been pre-filled from your Simple mode inputs, with sensible defaults for everything else.
+    sectionLabel: null,
+    description: `Your settings have been pre-filled from your Basic mode inputs, with smart defaults for everything else.
 
-Over the next few steps, we'll walk you through each section so you can tune the numbers to match your real financial situation. The more accurate your inputs, the more accurate your projection.
+Over the next steps, we'll walk you through each section so you can tune the numbers to match your real financial situation.
 
-Don't worry — you can always come back and adjust anything later.`,
-    action: "Let's get started",
+The more accurate your inputs, the more accurate your projection. You can always come back and adjust anything later.`,
+    action: "Let's start →",
   },
   {
-    step: 2,
-    title: "Step 1 — Your Income",
-    section: "inputs",
-    sectionLabel: "Parameters → Income",
-    description: `Head to the Parameters section and open the Income panel.
+    icon: '💼',
+    title: 'Step 1 — Your Income',
+    section: 'inputs',
+    sectionLabel: 'Parameters → Income',
+    description: `Head to Parameters and open the Income section.
 
-Here you can add:
-• Your exact gross salary (pre-tax)
-• Annual salary growth rate (how fast you expect raises)
-• A spouse or partner's income
-• Side income from freelancing, rental properties, or a second job
+Set your exact gross salary, expected raises, and any side income from freelancing or rental properties. If you have a spouse or partner, add their income too.
 
-Getting your income right is the most important input — everything else is downstream of this.`,
-    action: "Got it, next →",
+Getting income right is the most important input — everything else flows from this.`,
+    action: 'Got it →',
   },
   {
-    step: 3,
-    title: "Step 2 — Your Account Balances",
-    section: "inputs",
-    sectionLabel: "Parameters → Starting Balances",
-    description: `In the Starting Balances panel, break down your savings across account types:
+    icon: '🏦',
+    title: 'Step 2 — Account Balances',
+    section: 'inputs',
+    sectionLabel: 'Parameters → Starting Balances',
+    description: `In Starting Balances, break down your savings by account type:
 
-• Taxable brokerage (Fidelity, Schwab, etc.)
-• Cash / High-Yield Savings Account
+• Taxable brokerage (Fidelity, Schwab, Robinhood)
+• Cash / High-Yield Savings
 • 401(k) balance
 • Roth IRA balance
 • HSA balance
 
-We split your total savings estimate as a starting point, but your real split matters — 401(k) money grows differently than taxable brokerage money.`,
-    action: "Got it, next →",
+Each account type has different tax treatment — the split matters for accurate projections.`,
+    action: 'Got it →',
   },
   {
-    step: 4,
-    title: "Step 3 — Your 401(k) & Contributions",
-    section: "inputs",
-    sectionLabel: "Parameters → Contributions",
-    description: `In the Contributions panel, set:
+    icon: '📈',
+    title: 'Step 3 — Contributions & Matching',
+    section: 'inputs',
+    sectionLabel: 'Parameters → Contributions',
+    description: `Set your annual 401(k) contribution and your employer's match rate.
 
-• How much you contribute to your 401(k) each year
-• Your employer's matching rate (this is free money — always maximize it)
-• Roth IRA contributions (check if your income is within limits)
-• HSA contributions
+The employer match is free money — always contribute at least enough to get the full match.
 
-If your income is too high for direct Roth contributions, toggle on Backdoor Roth. Tap the ℹ icon next to any field for a plain-English explanation.`,
-    action: "Got it, next →",
+Check if your income is within Roth IRA limits ($146K single / $230K married). If not, enable the Backdoor Roth toggle. Tap ℹ on any field for a plain-English explanation.`,
+    action: 'Got it →',
   },
   {
-    step: 5,
-    title: "Step 4 — Life Milestones",
-    section: "milestones",
-    sectionLabel: "Milestones",
-    description: `Go to the Milestones section to add major life expenses — a home purchase, new car, college tuition, renovations.
+    icon: '🏠',
+    title: 'Step 4 — Life Milestones',
+    section: 'milestones',
+    sectionLabel: 'Milestones',
+    description: `Go to Milestones to add major life expenses — a home purchase, new car, college tuition, renovations.
 
 Enter costs in today's dollars. The planner automatically inflates them to what they'll actually cost when you reach that age.
 
-We've pre-loaded some common milestones. Delete any that don't apply to you and add ones that do.`,
-    action: "Got it, next →",
+We've pre-loaded common milestones. Delete any that don't apply and add your own.`,
+    action: 'Got it →',
   },
   {
-    step: 6,
-    title: "Step 5 — Debts & Income Events",
-    section: "debts",
-    sectionLabel: "Debts & Income Events",
+    icon: '💰',
+    title: 'Step 5 — Debts & Windfalls',
+    section: 'debts',
+    sectionLabel: 'Debts & Income Events',
     description: `Two more sections worth checking:
 
-Debts — Add your mortgage, student loans, car payments. These reduce your cash flow each year until paid off and meaningfully change your savings trajectory.
+Debts — Add your mortgage, student loans, and car payments. These reduce cash flow until paid off and significantly affect your savings trajectory.
 
-Income Events — Add one-time windfalls: an expected bonus, RSU vest, inheritance, or home sale. These are often the biggest single boosts to your net worth and are easy to miss.`,
-    action: "Got it, next →",
+Income Events — Add one-time windfalls: an expected bonus, RSU vest, inheritance, or home sale proceeds. These are often the biggest single boosts to net worth.`,
+    action: 'Got it →',
   },
   {
-    step: 7,
-    title: "Step 6 — Explore Your Projection",
-    section: "charts",
-    sectionLabel: "Charts & Monte Carlo",
-    description: `You're all set! Here's what to explore:
+    icon: '🎉',
+    title: "You're All Set!",
+    section: 'charts',
+    sectionLabel: 'Charts & Monte Carlo',
+    description: `Your financial plan is ready to explore:
 
-📊 Charts — See your net worth grow over time, how your assets are allocated, and what retirement drawdown looks like.
+📊 Charts — Net worth over time, asset breakdown, retirement drawdown
 
-🎲 Monte Carlo — Run 1,000 simulations with randomized market returns to see the probability your portfolio survives to age 90.
+🎲 Monte Carlo — 1,000 simulations showing the probability your portfolio survives to 90
 
-📋 Scenarios — Compare "What if I retire at 55?" vs "What if the market underperforms?" side by side.
+📋 Scenarios — "What if I retire at 55?" vs "Bear market?" side by side
 
-Remember: tap the ℹ icon on any parameter for an explanation. You can always switch back to Simple mode from the toggle at the top.`,
-    action: "Start exploring →",
+Tap ℹ on any parameter for a plain-English explanation. Switch between Basic / Intermediate / Advanced anytime from the toggle at the top.`,
+    action: 'Start exploring →',
+  },
+]
+
+const INTERMEDIATE_STEPS = [
+  {
+    icon: '⚡',
+    title: 'Welcome to Intermediate Mode',
+    section: null,
+    sectionLabel: null,
+    description: `Intermediate mode gives you meaningful control without the complexity of the full advanced setup.
+
+Your inputs have been pre-filled from your Basic mode estimates. Over the next few steps, we'll help you fill in the key details that make the biggest difference to your projection.`,
+    action: "Let's go →",
+  },
+  {
+    icon: '💼',
+    title: 'Step 1 — Income & Accounts',
+    section: 'inputs',
+    sectionLabel: 'Parameters',
+    description: `Go to Parameters and check:
+
+• Your exact salary and expected annual raise
+• Account balances split by type (stocks, cash, 401k, Roth IRA)
+• Your annual 401(k) contribution and employer match
+
+The employer match is free money — make sure you're capturing all of it.`,
+    action: 'Got it →',
+  },
+  {
+    icon: '🏠',
+    title: 'Step 2 — Milestones & Debts',
+    section: 'milestones',
+    sectionLabel: 'Milestones & Debts',
+    description: `Add your major life expenses in Milestones — home purchase, car, college.
+
+Then check Debts to add any mortgage, student loans, or car payments. These reduce your monthly savings capacity and the planner needs to account for them.
+
+Also check Income Events for any expected bonuses or inheritances.`,
+    action: 'Got it →',
+  },
+  {
+    icon: '🎉',
+    title: "You're All Set!",
+    section: 'charts',
+    sectionLabel: 'Charts',
+    description: `Your projection is ready. Check out:
+
+📊 Charts — See your net worth grow over time and how retirement drawdown looks
+
+📋 Scenarios — Compare "retire at 55" vs "stay until 67" side by side
+
+When you're ready for more control — tax rates, asset allocation, Monte Carlo simulations — switch to Advanced mode anytime from the toggle at the top.`,
+    action: 'Start exploring →',
   },
 ]
 
 export function OnboardingTutorial() {
-  const { showOnboarding, onboardingStep, dismissOnboarding, nextOnboardingStep, setActiveSection } = useStore()
+  const {
+    showOnboarding, onboardingStep, onboardingType,
+    dismissOnboarding, nextOnboardingStep, prevOnboardingStep,
+    setActiveSection
+  } = useStore()
 
   if (!showOnboarding) return null
 
-  const step = STEPS[onboardingStep]
+  const steps = onboardingType === 'intermediate' ? INTERMEDIATE_STEPS : ADVANCED_STEPS
+  const step = steps[onboardingStep]
+  const isFirst = onboardingStep === 0
+  const isLast = onboardingStep === steps.length - 1
+
   const handleNext = () => {
     if (step.section) setActiveSection(step.section)
     nextOnboardingStep()
   }
 
+  const handlePrev = () => {
+    prevOnboardingStep()
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-600 rounded-2xl w-full max-w-lg shadow-2xl">
+      <div className={`bg-slate-800 border rounded-2xl w-full max-w-lg shadow-2xl transition-all ${isLast ? 'border-teal-600' : 'border-slate-600'}`}>
 
         {/* Progress bar */}
-        <div className="h-1 bg-slate-700 rounded-t-2xl overflow-hidden">
+        <div className="h-1.5 bg-slate-700 rounded-t-2xl overflow-hidden">
           <div
-            className="h-full bg-teal-500 transition-all duration-500"
-            style={{ width: `${((onboardingStep + 1) / STEPS.length) * 100}%` }}
+            className={`h-full transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-teal-500'}`}
+            style={{ width: `${((onboardingStep + 1) / steps.length) * 100}%` }}
           />
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Step counter */}
+          {/* Top row: step count + skip */}
           <div className="flex items-center justify-between">
-            <span className="text-slate-500 text-xs font-medium">
-              {onboardingStep + 1} of {STEPS.length}
+            <span className="text-slate-500 text-xs">
+              {onboardingStep + 1} of {steps.length}
             </span>
+            <button
+              onClick={dismissOnboarding}
+              className="text-slate-500 hover:text-slate-300 text-sm transition-colors p-1 rounded-lg hover:bg-slate-700"
+              aria-label="Skip tutorial"
+            >
+              ✕ Skip
+            </button>
+          </div>
+
+          {/* Dot progress */}
+          <div className="flex items-center justify-center gap-2">
+            {steps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (i < onboardingStep) {
+                    // allow going back via dots
+                    useStore.setState({ onboardingStep: i })
+                  }
+                }}
+                className={`rounded-full transition-all duration-300 ${
+                  i === onboardingStep
+                    ? 'w-6 h-2 bg-teal-400'
+                    : i < onboardingStep
+                    ? 'w-2 h-2 bg-teal-700 hover:bg-teal-600 cursor-pointer'
+                    : 'w-2 h-2 bg-slate-600'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Icon + Title */}
+          <div className="text-center space-y-2">
+            <div className="text-5xl">{step.icon}</div>
+            <h3 className={`text-xl font-semibold ${isLast ? 'text-emerald-400' : 'text-slate-100'}`}>
+              {step.title}
+            </h3>
             {step.sectionLabel && (
-              <span className="text-teal-400 text-xs bg-teal-900/40 border border-teal-800 px-2 py-1 rounded-full">
+              <span className="inline-block text-teal-400 text-xs bg-teal-900/40 border border-teal-800 px-3 py-1 rounded-full">
                 → {step.sectionLabel}
               </span>
             )}
           </div>
 
-          {/* Title */}
-          <h3 className="text-slate-100 text-xl font-semibold">{step.title}</h3>
-
           {/* Description */}
-          <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+          <div className="bg-slate-700/40 rounded-xl p-4 text-slate-300 text-sm leading-relaxed whitespace-pre-line">
             {step.description}
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-2">
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between gap-3 pt-1">
             <button
-              onClick={dismissOnboarding}
-              className="text-slate-500 hover:text-slate-400 text-xs transition-colors"
+              onClick={handlePrev}
+              disabled={isFirst}
+              className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm transition-colors disabled:opacity-0 disabled:cursor-default"
             >
-              Skip tutorial
+              ← Back
             </button>
             <button
               onClick={handleNext}
-              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium rounded-xl transition-colors"
+              className={`flex-1 py-2.5 text-white text-sm font-medium rounded-xl transition-colors ${
+                isLast
+                  ? 'bg-emerald-600 hover:bg-emerald-500'
+                  : 'bg-teal-600 hover:bg-teal-500'
+              }`}
             >
               {step.action}
             </button>

@@ -6,6 +6,7 @@ import { Sidebar } from './components/layout/Sidebar'
 import { SectionWrapper } from './components/layout/SectionWrapper'
 import { SummaryCards } from './components/dashboard/SummaryCards'
 import { ParameterForm } from './components/inputs/ParameterForm'
+import { IntermediateParameterForm } from './components/inputs/IntermediateParameterForm'
 import { ProjectionsTable } from './components/tables/ProjectionsTable'
 import { NetWorthChart } from './components/charts/NetWorthChart'
 import { AssetBreakdownChart } from './components/charts/AssetBreakdownChart'
@@ -71,7 +72,7 @@ function ScenarioNetWorthSection() {
 }
 
 export default function App() {
-  const { activeSection, isSimpleMode } = useStore()
+  const { activeSection, mode } = useStore()
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -87,86 +88,135 @@ export default function App() {
             </div>
             <div className="flex items-center gap-3">
               <ModeToggle />
-              {!isSimpleMode && <ExportBar />}
+              {mode !== 'simple' && <ExportBar />}
             </div>
           </div>
 
-          {!isSimpleMode && <AdvancedWarningBanner />}
+          {mode === 'simple' && <SimpleModeView />}
 
-          {isSimpleMode ? (
-            <SimpleModeView />
-          ) : (
+          {mode === 'intermediate' && (
             <>
-
-          {activeSection === 'dashboard' && (
-            <SectionWrapper title="Dashboard" subtitle="Key metrics from your current projection">
-              <SummaryCards />
-            </SectionWrapper>
+              {!false && <AdvancedWarningBanner />}
+              {activeSection === 'dashboard' && (
+                <SectionWrapper title="Dashboard" subtitle="Key metrics from your current projection">
+                  <SummaryCards />
+                </SectionWrapper>
+              )}
+              {activeSection === 'inputs' && (
+                <SectionWrapper title="Parameters" subtitle="Adjust inputs — projections update instantly">
+                  <IntermediateParameterForm />
+                </SectionWrapper>
+              )}
+              {activeSection === 'projections' && (
+                <SectionWrapper title="Year-by-Year Projections" subtitle="Toggle nominal vs inflation-adjusted values">
+                  <ProjectionsTable />
+                </SectionWrapper>
+              )}
+              {activeSection === 'charts' && (
+                <SectionWrapper title="Visualizations">
+                  <div className="space-y-6">
+                    <NetWorthChart />
+                    <AssetBreakdownChart />
+                    <DrawdownChart />
+                  </div>
+                </SectionWrapper>
+              )}
+              {activeSection === 'milestones' && (
+                <SectionWrapper title="Life Milestones" subtitle="Enter costs in today's dollars — automatically inflation-adjusted">
+                  <MilestoneManager />
+                </SectionWrapper>
+              )}
+              {activeSection === 'debts' && (
+                <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
+                  <DebtManager />
+                </SectionWrapper>
+              )}
+              {activeSection === 'income-events' && (
+                <SectionWrapper title="Income Events" subtitle="One-time windfalls: bonuses, RSU vests, inheritances">
+                  <IncomeEventManager />
+                </SectionWrapper>
+              )}
+              {activeSection === 'scenarios' && (
+                <SectionWrapper title="Scenario Analysis" subtitle="Compare scenarios side by side">
+                  <ScenarioPanel />
+                  <ScenarioNetWorthSection />
+                </SectionWrapper>
+              )}
+            </>
           )}
 
-          {activeSection === 'inputs' && (
-            <SectionWrapper title="Parameters" subtitle="Adjust all inputs — projections update instantly">
-              <ParameterForm />
-            </SectionWrapper>
-          )}
+          {mode === 'advanced' && (
+            <>
+              <AdvancedWarningBanner />
 
-          {activeSection === 'projections' && (
-            <SectionWrapper title="Year-by-Year Projections" subtitle="Toggle nominal vs inflation-adjusted values">
-              <ProjectionsTable />
-            </SectionWrapper>
-          )}
+              {activeSection === 'dashboard' && (
+                <SectionWrapper title="Dashboard" subtitle="Key metrics from your current projection">
+                  <SummaryCards />
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'charts' && (
-            <SectionWrapper title="Visualizations">
-              <div className="space-y-6">
-                <NetWorthChart />
-                <AssetBreakdownChart />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <GlidepathChart />
-                  <ExpensesChart />
-                </div>
-                <DrawdownChart />
-              </div>
-            </SectionWrapper>
-          )}
+              {activeSection === 'inputs' && (
+                <SectionWrapper title="Parameters" subtitle="Adjust all inputs — projections update instantly">
+                  <ParameterForm />
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'milestones' && (
-            <SectionWrapper
-              title="Life Milestones"
-              subtitle="Enter costs in today's dollars — automatically inflation-adjusted to target age"
-            >
-              <MilestoneManager />
-            </SectionWrapper>
-          )}
+              {activeSection === 'projections' && (
+                <SectionWrapper title="Year-by-Year Projections" subtitle="Toggle nominal vs inflation-adjusted values">
+                  <ProjectionsTable />
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'debts' && (
-            <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
-              <DebtManager />
-            </SectionWrapper>
-          )}
+              {activeSection === 'charts' && (
+                <SectionWrapper title="Visualizations">
+                  <div className="space-y-6">
+                    <NetWorthChart />
+                    <AssetBreakdownChart />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <GlidepathChart />
+                      <ExpensesChart />
+                    </div>
+                    <DrawdownChart />
+                  </div>
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'income-events' && (
-            <SectionWrapper
-              title="Income Events"
-              subtitle="One-time windfalls: bonuses, RSU vests, inheritances, home sale proceeds"
-            >
-              <IncomeEventManager />
-            </SectionWrapper>
-          )}
+              {activeSection === 'milestones' && (
+                <SectionWrapper
+                  title="Life Milestones"
+                  subtitle="Enter costs in today's dollars — automatically inflation-adjusted to target age"
+                >
+                  <MilestoneManager />
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'scenarios' && (
-            <SectionWrapper title="Scenario Analysis" subtitle="Compare preset and custom scenarios side by side">
-              <ScenarioPanel />
-              <ScenarioNetWorthSection />
-            </SectionWrapper>
-          )}
+              {activeSection === 'debts' && (
+                <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
+                  <DebtManager />
+                </SectionWrapper>
+              )}
 
-          {activeSection === 'montecarlo' && (
-            <SectionWrapper title="Monte Carlo Simulation" subtitle="Probabilistic outcomes across thousands of randomized market scenarios">
-              <MonteCarloChart />
-            </SectionWrapper>
-          )}
+              {activeSection === 'income-events' && (
+                <SectionWrapper
+                  title="Income Events"
+                  subtitle="One-time windfalls: bonuses, RSU vests, inheritances, home sale proceeds"
+                >
+                  <IncomeEventManager />
+                </SectionWrapper>
+              )}
 
+              {activeSection === 'scenarios' && (
+                <SectionWrapper title="Scenario Analysis" subtitle="Compare preset and custom scenarios side by side">
+                  <ScenarioPanel />
+                  <ScenarioNetWorthSection />
+                </SectionWrapper>
+              )}
+
+              {activeSection === 'montecarlo' && (
+                <SectionWrapper title="Monte Carlo Simulation" subtitle="Probabilistic outcomes across thousands of randomized market scenarios">
+                  <MonteCarloChart />
+                </SectionWrapper>
+              )}
             </>
           )}
 

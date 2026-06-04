@@ -1,19 +1,21 @@
 import { useStore } from '../../store/useStore'
+import type { AppMode } from '../../store/useStore'
 
-const NAV = [
-  { id: 'dashboard', label: 'Dashboard', icon: '▦' },
-  { id: 'inputs', label: 'Parameters', icon: '⚙' },
-  { id: 'projections', label: 'Projections', icon: '≡' },
-  { id: 'charts', label: 'Charts', icon: '◫' },
-  { id: 'milestones', label: 'Milestones', icon: '⚑' },
-  { id: 'debts', label: 'Debts', icon: '◎' },
-  { id: 'income-events', label: 'Income Events', icon: '✦' },
-  { id: 'scenarios', label: 'Scenarios', icon: '⊞' },
-  { id: 'montecarlo', label: 'Monte Carlo', icon: '∿' },
+const ALL_NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: '▦', modes: ['simple', 'intermediate', 'advanced'] },
+  { id: 'inputs', label: 'Parameters', icon: '⚙', modes: ['intermediate', 'advanced'] },
+  { id: 'projections', label: 'Projections', icon: '≡', modes: ['intermediate', 'advanced'] },
+  { id: 'charts', label: 'Charts', icon: '◫', modes: ['intermediate', 'advanced'] },
+  { id: 'milestones', label: 'Milestones', icon: '⚑', modes: ['intermediate', 'advanced'] },
+  { id: 'debts', label: 'Debts', icon: '◎', modes: ['intermediate', 'advanced'] },
+  { id: 'income-events', label: 'Income Events', icon: '✦', modes: ['intermediate', 'advanced'] },
+  { id: 'scenarios', label: 'Scenarios', icon: '⊞', modes: ['intermediate', 'advanced'] },
+  { id: 'montecarlo', label: 'Monte Carlo', icon: '∿', modes: ['advanced'] },
 ]
 
 export function Sidebar() {
-  const { activeSection, setActiveSection, summary } = useStore()
+  const { activeSection, setActiveSection, summary, mode } = useStore()
+  const NAV = ALL_NAV.filter(item => item.modes.includes(mode as AppMode))
 
   return (
     <>

@@ -7,6 +7,8 @@ import { nanoid } from '../utils/nanoid'
 
 const PRESET_COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6']
 
+export type AppMode = 'simple' | 'intermediate' | 'advanced'
+
 interface AppState {
   inputs: ModelInputs
   rows: ProjectionRow[]
@@ -17,7 +19,7 @@ interface AppState {
   mcProgress: number
   activeSection: string
   showNominal: boolean
-  isSimpleMode: boolean
+  mode: AppMode
   simpleModeInputs: {
     currentAge: number
     retirementAge: number
@@ -28,6 +30,7 @@ interface AppState {
   showAdvancedWarning: boolean
   showOnboarding: boolean
   onboardingStep: number
+  onboardingType: 'advanced' | 'intermediate' | null
 
   setInputs: (inputs: Partial<ModelInputs>) => void
   resetInputs: () => void
@@ -39,15 +42,37 @@ interface AppState {
   setActiveSection: (s: string) => void
   toggleNominal: () => void
   setSimpleModeInputs: (partial: Partial<AppState['simpleModeInputs']>) => void
-  switchToAdvanced: () => void
   switchToSimple: () => void
+  switchToIntermediate: () => void
+  switchToAdvanced: () => void
   dismissAdvancedWarning: () => void
   dismissOnboarding: () => void
   nextOnboardingStep: () => void
+  prevOnboardingStep: () => void
 }
 
 function compute(inputs: ModelInputs) {
   return runProjection(inputs)
+}
+
+function mapSimpleToFull(
+  simpleModeInputs: AppState['simpleModeInputs'],
+  lifestylePct: number
+): ModelInputs {
+  const { currentAge, retirementAge, salary, totalSavings } = simpleModeInputs
+  return {
+    ...DEFAULT_INPUTS,
+    currentAge,
+    retirementAge,
+    salary,
+    stocks: Math.round(totalSavings * 0.30),
+    k401: Math.round(totalSavings * 0.30),
+    cash: Math.round(totalSavings * 0.25),
+    rothIRA: Math.round(totalSavings * 0.15),
+    bonds: 0,
+    hsa: 0,
+    baseAnnualExpenses: Math.round(salary * lifestylePct),
+  }
 }
 
 const initial = compute(DEFAULT_INPUTS)
@@ -64,7 +89,7 @@ export const useStore = create<AppState>()(
       mcProgress: 0,
       activeSection: 'dashboard',
       showNominal: true,
-      isSimpleMode: true,
+      mode: 'simple',
       simpleModeInputs: {
         currentAge: 28,
         retirementAge: 65,
@@ -75,6 +100,7 @@ export const useStore = create<AppState>()(
       showAdvancedWarning: false,
       showOnboarding: false,
       onboardingStep: 0,
+      onboardingType: null,
 
       setInputs: (partial) => {
         const next = { ...get().inputs, ...partial }
@@ -114,56 +140,69 @@ export const useStore = create<AppState>()(
       setSimpleModeInputs: (partial) => {
         const next = { ...get().simpleModeInputs, ...partial }
         const lifestylePct = next.lifestyle === 'necessities' ? 0.50 : next.lifestyle === 'comfortable' ? 0.65 : 0.80
-        const mapped: ModelInputs = {
-          ...DEFAULT_INPUTS,
-          currentAge: next.currentAge,
-          retirementAge: next.retirementAge,
-          salary: next.salary,
-          stocks: Math.round(next.totalSavings * 0.30),
-          k401: Math.round(next.totalSavings * 0.30),
-          cash: Math.round(next.totalSavings * 0.25),
-          rothIRA: Math.round(next.totalSavings * 0.15),
-          bonds: 0,
-          hsa: 0,
-          baseAnnualExpenses: Math.round(next.salary * lifestylePct),
-        }
+        const mapped = mapSimpleToFull(next, lifestylePct)
         const { rows, summary } = compute(mapped)
         set({ simpleModeInputs: next, rows, summary })
       },
 
-      switchToAdvanced: () => {
-        const { simpleModeInputs } = get()
-        const { currentAge, retirementAge, salary, totalSavings, lifestyle } = simpleModeInputs
-        const lifestylePct = lifestyle === 'necessities' ? 0.50 : lifestyle === 'comfortable' ? 0.65 : 0.80
-        const advancedInputs: ModelInputs = {
-          ...DEFAULT_INPUTS,
-          currentAge,
-          retirementAge,
-          salary,
-          stocks: Math.round(totalSavings * 0.30),
-          k401: Math.round(totalSavings * 0.30),
-          cash: Math.round(totalSavings * 0.25),
-          rothIRA: Math.round(totalSavings * 0.15),
-          bonds: 0,
-          hsa: 0,
-          baseAnnualExpenses: Math.round(salary * lifestylePct),
+      switchToSimple: () => set({ mode: 'simple' }),
+
+      switchToIntermediate: () => {
+        const { simpleModeInputs, mode } = get()
+        // Only remap inputs if coming from simple mode
+        if (mode === 'simple') {
+          const lifestylePct = simpleModeInputs.lifestyle === 'necessities' ? 0.50 : simpleModeInputs.lifestyle === 'comfortable' ? 0.65 : 0.80
+          const mapped = mapSimpleToFull(simpleModeInputs, lifestylePct)
+          const { rows, summary } = compute(mapped)
+          set({
+            inputs: mapped, rows, summary,
+            mode: 'intermediate',
+            showAdvancedWarning: true,
+            showOnboarding: true,
+            onboardingStep: 0,
+            onboardingType: 'intermediate',
+          })
+        } else {
+          set({ mode: 'intermediate' })
         }
-        const { rows, summary } = compute(advancedInputs)
-        set({ inputs: advancedInputs, rows, summary, isSimpleMode: false, showAdvancedWarning: true, showOnboarding: true, onboardingStep: 0 })
       },
 
-      switchToSimple: () => set({ isSimpleMode: true }),
+      switchToAdvanced: () => {
+        const { simpleModeInputs, mode } = get()
+        if (mode === 'simple') {
+          const lifestylePct = simpleModeInputs.lifestyle === 'necessities' ? 0.50 : simpleModeInputs.lifestyle === 'comfortable' ? 0.65 : 0.80
+          const mapped = mapSimpleToFull(simpleModeInputs, lifestylePct)
+          const { rows, summary } = compute(mapped)
+          set({
+            inputs: mapped, rows, summary,
+            mode: 'advanced',
+            showAdvancedWarning: true,
+            showOnboarding: true,
+            onboardingStep: 0,
+            onboardingType: 'advanced',
+          })
+        } else {
+          set({ mode: 'advanced', showOnboarding: false })
+        }
+      },
 
       dismissAdvancedWarning: () => set({ showAdvancedWarning: false }),
 
-      dismissOnboarding: () => set({ showOnboarding: false, onboardingStep: 0 }),
+      dismissOnboarding: () => set({ showOnboarding: false, onboardingStep: 0, onboardingType: null }),
+
       nextOnboardingStep: () => {
-        const { onboardingStep } = get()
-        if (onboardingStep >= 6) {
-          set({ showOnboarding: false, onboardingStep: 0 })
+        const { onboardingStep, onboardingType } = get()
+        const maxSteps = onboardingType === 'intermediate' ? 3 : 6
+        if (onboardingStep >= maxSteps) {
+          set({ showOnboarding: false, onboardingStep: 0, onboardingType: null })
         } else {
           set({ onboardingStep: onboardingStep + 1 })
         }
+      },
+
+      prevOnboardingStep: () => {
+        const { onboardingStep } = get()
+        if (onboardingStep > 0) set({ onboardingStep: onboardingStep - 1 })
       },
     }),
     {
@@ -172,11 +211,12 @@ export const useStore = create<AppState>()(
         inputs: state.inputs,
         scenarios: state.scenarios,
         showNominal: state.showNominal,
-        isSimpleMode: state.isSimpleMode,
+        mode: state.mode,
         simpleModeInputs: state.simpleModeInputs,
         showAdvancedWarning: state.showAdvancedWarning,
         showOnboarding: state.showOnboarding,
         onboardingStep: state.onboardingStep,
+        onboardingType: state.onboardingType,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
