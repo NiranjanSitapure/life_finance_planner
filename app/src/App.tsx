@@ -121,27 +121,6 @@ export default function App() {
                   </div>
                 </SectionWrapper>
               )}
-              {activeSection === 'milestones' && (
-                <SectionWrapper title="Life Milestones" subtitle="Enter costs in today's dollars — automatically inflation-adjusted">
-                  <MilestoneManager />
-                </SectionWrapper>
-              )}
-              {activeSection === 'debts' && (
-                <SectionWrapper title="Debt Manager" subtitle="Deducted from cash flow each year until payoff age">
-                  <DebtManager />
-                </SectionWrapper>
-              )}
-              {activeSection === 'income-events' && (
-                <SectionWrapper title="Income Events" subtitle="One-time windfalls: bonuses, RSU vests, inheritances">
-                  <IncomeEventManager />
-                </SectionWrapper>
-              )}
-              {activeSection === 'scenarios' && (
-                <SectionWrapper title="Scenario Analysis" subtitle="Compare scenarios side by side">
-                  <ScenarioPanel />
-                  <ScenarioNetWorthSection />
-                </SectionWrapper>
-              )}
             </>
           )}
 

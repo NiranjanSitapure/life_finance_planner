@@ -6,10 +6,10 @@ const ALL_NAV = [
   { id: 'inputs', label: 'Parameters', icon: '⚙', modes: ['intermediate', 'advanced'] },
   { id: 'projections', label: 'Projections', icon: '≡', modes: ['intermediate', 'advanced'] },
   { id: 'charts', label: 'Charts', icon: '◫', modes: ['intermediate', 'advanced'] },
-  { id: 'milestones', label: 'Milestones', icon: '⚑', modes: ['intermediate', 'advanced'] },
-  { id: 'debts', label: 'Debts', icon: '◎', modes: ['intermediate', 'advanced'] },
-  { id: 'income-events', label: 'Income Events', icon: '✦', modes: ['intermediate', 'advanced'] },
-  { id: 'scenarios', label: 'Scenarios', icon: '⊞', modes: ['intermediate', 'advanced'] },
+  { id: 'milestones', label: 'Milestones', icon: '⚑', modes: ['advanced'] },
+  { id: 'debts', label: 'Debts', icon: '◎', modes: ['advanced'] },
+  { id: 'income-events', label: 'Income Events', icon: '✦', modes: ['advanced'] },
+  { id: 'scenarios', label: 'Scenarios', icon: '⊞', modes: ['advanced'] },
   { id: 'montecarlo', label: 'Monte Carlo', icon: '∿', modes: ['advanced'] },
 ]
 

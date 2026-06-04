@@ -192,7 +192,7 @@ export const useStore = create<AppState>()(
 
       nextOnboardingStep: () => {
         const { onboardingStep, onboardingType } = get()
-        const maxSteps = onboardingType === 'intermediate' ? 3 : 6
+        const maxSteps = onboardingType === 'intermediate' ? 2 : 6
         if (onboardingStep >= maxSteps) {
           set({ showOnboarding: false, onboardingStep: 0, onboardingType: null })
         } else {

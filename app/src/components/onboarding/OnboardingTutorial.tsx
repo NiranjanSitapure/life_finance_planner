@@ -121,18 +121,6 @@ The employer match is free money — make sure you're capturing all of it.`,
     action: 'Got it →',
   },
   {
-    icon: '🏠',
-    title: 'Step 2 — Milestones & Debts',
-    section: 'milestones',
-    sectionLabel: 'Milestones & Debts',
-    description: `Add your major life expenses in Milestones — home purchase, car, college.
-
-Then check Debts to add any mortgage, student loans, or car payments. These reduce your monthly savings capacity and the planner needs to account for them.
-
-Also check Income Events for any expected bonuses or inheritances.`,
-    action: 'Got it →',
-  },
-  {
     icon: '🎉',
     title: "You're All Set!",
     section: 'charts',
@@ -141,9 +129,9 @@ Also check Income Events for any expected bonuses or inheritances.`,
 
 📊 Charts — See your net worth grow over time and how retirement drawdown looks
 
-📋 Scenarios — Compare "retire at 55" vs "stay until 67" side by side
+📋 Projections — Year-by-year table of savings, income, and expenses
 
-When you're ready for more control — tax rates, asset allocation, Monte Carlo simulations — switch to Advanced mode anytime from the toggle at the top.`,
+When you're ready for full control — milestones, debts, Monte Carlo simulations — switch to Advanced mode anytime from the toggle at the top.`,
     action: 'Start exploring →',
   },
 ]
