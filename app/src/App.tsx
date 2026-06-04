@@ -1,4 +1,7 @@
 import { useStore } from './store/useStore'
+import { SimpleModeView } from './components/simple/SimpleModeView'
+import { ModeToggle } from './components/layout/ModeToggle'
+import { AdvancedWarningBanner } from './components/layout/AdvancedWarningBanner'
 import { Sidebar } from './components/layout/Sidebar'
 import { SectionWrapper } from './components/layout/SectionWrapper'
 import { SummaryCards } from './components/dashboard/SummaryCards'
@@ -67,7 +70,7 @@ function ScenarioNetWorthSection() {
 }
 
 export default function App() {
-  const { activeSection } = useStore()
+  const { activeSection, isSimpleMode } = useStore()
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -80,8 +83,18 @@ export default function App() {
               <h1 className="text-2xl font-bold text-slate-100">Life Finance Planner</h1>
               <p className="text-slate-500 text-sm mt-1">Lifetime projections — all computed locally in your browser</p>
             </div>
-            <ExportBar />
+            <div className="flex items-center gap-3">
+              <ModeToggle />
+              {!isSimpleMode && <ExportBar />}
+            </div>
           </div>
+
+          {!isSimpleMode && <AdvancedWarningBanner />}
+
+          {isSimpleMode ? (
+            <SimpleModeView />
+          ) : (
+            <>
 
           {activeSection === 'dashboard' && (
             <SectionWrapper title="Dashboard" subtitle="Key metrics from your current projection">
@@ -150,6 +163,9 @@ export default function App() {
             <SectionWrapper title="Monte Carlo Simulation" subtitle="Probabilistic outcomes across thousands of randomized market scenarios">
               <MonteCarloChart />
             </SectionWrapper>
+          )}
+
+            </>
           )}
 
         </div>

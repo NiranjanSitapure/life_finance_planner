@@ -17,6 +17,15 @@ interface AppState {
   mcProgress: number
   activeSection: string
   showNominal: boolean
+  isSimpleMode: boolean
+  simpleModeInputs: {
+    currentAge: number
+    retirementAge: number
+    salary: number
+    totalSavings: number
+    lifestyle: 'necessities' | 'comfortable' | 'lavish'
+  }
+  showAdvancedWarning: boolean
 
   setInputs: (inputs: Partial<ModelInputs>) => void
   resetInputs: () => void
@@ -27,6 +36,10 @@ interface AppState {
   setMcProgress: (v: number) => void
   setActiveSection: (s: string) => void
   toggleNominal: () => void
+  setSimpleModeInputs: (partial: Partial<AppState['simpleModeInputs']>) => void
+  switchToAdvanced: () => void
+  switchToSimple: () => void
+  dismissAdvancedWarning: () => void
 }
 
 function compute(inputs: ModelInputs) {
@@ -47,6 +60,15 @@ export const useStore = create<AppState>()(
       mcProgress: 0,
       activeSection: 'dashboard',
       showNominal: true,
+      isSimpleMode: true,
+      simpleModeInputs: {
+        currentAge: 28,
+        retirementAge: 65,
+        salary: 75000,
+        totalSavings: 25000,
+        lifestyle: 'comfortable',
+      },
+      showAdvancedWarning: false,
 
       setInputs: (partial) => {
         const next = { ...get().inputs, ...partial }
@@ -82,6 +104,51 @@ export const useStore = create<AppState>()(
       setMcProgress: (v) => set({ mcProgress: v }),
       setActiveSection: (s) => set({ activeSection: s }),
       toggleNominal: () => set({ showNominal: !get().showNominal }),
+
+      setSimpleModeInputs: (partial) => {
+        const next = { ...get().simpleModeInputs, ...partial }
+        const lifestylePct = next.lifestyle === 'necessities' ? 0.50 : next.lifestyle === 'comfortable' ? 0.65 : 0.80
+        const mapped: ModelInputs = {
+          ...DEFAULT_INPUTS,
+          currentAge: next.currentAge,
+          retirementAge: next.retirementAge,
+          salary: next.salary,
+          stocks: Math.round(next.totalSavings * 0.30),
+          k401: Math.round(next.totalSavings * 0.30),
+          cash: Math.round(next.totalSavings * 0.25),
+          rothIRA: Math.round(next.totalSavings * 0.15),
+          bonds: 0,
+          hsa: 0,
+          baseAnnualExpenses: Math.round(next.salary * lifestylePct),
+        }
+        const { rows, summary } = compute(mapped)
+        set({ simpleModeInputs: next, rows, summary })
+      },
+
+      switchToAdvanced: () => {
+        const { simpleModeInputs } = get()
+        const { currentAge, retirementAge, salary, totalSavings, lifestyle } = simpleModeInputs
+        const lifestylePct = lifestyle === 'necessities' ? 0.50 : lifestyle === 'comfortable' ? 0.65 : 0.80
+        const advancedInputs: ModelInputs = {
+          ...DEFAULT_INPUTS,
+          currentAge,
+          retirementAge,
+          salary,
+          stocks: Math.round(totalSavings * 0.30),
+          k401: Math.round(totalSavings * 0.30),
+          cash: Math.round(totalSavings * 0.25),
+          rothIRA: Math.round(totalSavings * 0.15),
+          bonds: 0,
+          hsa: 0,
+          baseAnnualExpenses: Math.round(salary * lifestylePct),
+        }
+        const { rows, summary } = compute(advancedInputs)
+        set({ inputs: advancedInputs, rows, summary, isSimpleMode: false, showAdvancedWarning: true })
+      },
+
+      switchToSimple: () => set({ isSimpleMode: true }),
+
+      dismissAdvancedWarning: () => set({ showAdvancedWarning: false }),
     }),
     {
       name: 'life-finance-planner',
@@ -89,6 +156,9 @@ export const useStore = create<AppState>()(
         inputs: state.inputs,
         scenarios: state.scenarios,
         showNominal: state.showNominal,
+        isSimpleMode: state.isSimpleMode,
+        simpleModeInputs: state.simpleModeInputs,
+        showAdvancedWarning: state.showAdvancedWarning,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
