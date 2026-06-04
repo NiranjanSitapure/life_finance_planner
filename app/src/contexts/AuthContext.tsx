@@ -97,11 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Subscribe to store changes and auto-save
   useEffect(() => {
     if (!user) return
-    const unsub = useStore.subscribe(
-      state => [state.inputs, state.scenarios, state.mode, state.showNominal],
-      () => scheduleSave(),
-      { equalityFn: () => false },
-    )
+    const unsub = useStore.subscribe(() => scheduleSave())
     return unsub
   }, [user, scheduleSave])
 
