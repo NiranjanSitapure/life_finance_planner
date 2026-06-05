@@ -7,8 +7,5 @@ cmds = ["npm ci"]
 [phases.build]
 cmds = ["npx prisma generate", "npm run build"]
 
-[phases.release]
-cmds = ["npx prisma migrate deploy"]
-
 [start]
-cmd = "node dist/index.js"
+cmd = "npx prisma db push --accept-data-loss --skip-generate && node dist/index.js"
