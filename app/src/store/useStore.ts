@@ -236,7 +236,10 @@ export const useStore = create<AppState>()(
       },
     }),
     {
-      name: 'life-finance-planner',
+      name: 'life-finance-planner-guest',
+      // AuthProvider switches the storage key per user and triggers rehydrate after auth resolves.
+      // Skipping the initial auto-hydrate keeps anonymous localStorage data out of a logged-in user's view.
+      skipHydration: true,
       version: CURRENT_SCHEMA_VERSION,
       migrate: (persistedState, fromVersion) => {
         return migratePersistedState(persistedState, fromVersion) as AppState
