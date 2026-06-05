@@ -47,13 +47,17 @@ authRouter.get('/google/callback',
   (req: Request, res: Response) => {
     const user = req.user as { id: string }
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: '30d' })
+    const isProd = process.env.NODE_ENV === 'production'
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: isProd,
+      // 'none' is required for cross-site cookies (Vercel frontend ↔ Railway backend)
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     })
-    res.redirect(process.env.FRONTEND_URL!)
+    // Redirect to the first allowed origin (the primary frontend URL)
+    const primaryFrontend = (process.env.FRONTEND_URL ?? '').split(',')[0].trim()
+    res.redirect(primaryFrontend)
   },
 )
 
@@ -77,6 +81,11 @@ authRouter.get('/me', (req: Request, res: Response): void => {
 
 // Logout
 authRouter.post('/logout', (_req: Request, res: Response) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax' })
+  const isProd = process.env.NODE_ENV === 'production'
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  })
   res.json({ ok: true })
 })
