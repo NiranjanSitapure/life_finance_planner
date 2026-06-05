@@ -60,3 +60,24 @@ jobs:
         run: npx prisma generate
       - name: TypeScript build (catches Railway compile errors)
         run: npm run build
+
+      - name: Smoke boot (catches import-time/startup crashes Railway would hit)
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db
+          JWT_SECRET: ci-placeholder-secret-at-least-16-chars
+          FRONTEND_URL: http://localhost:5173
+          GOOGLE_CLIENT_ID: ci-placeholder-id
+          GOOGLE_CLIENT_SECRET: ci-placeholder-secret
+          GOOGLE_CALLBACK_URL: http://localhost:3001/api/auth/google/callback
+          PORT: "3001"
+        run: |
+          node dist/index.js &
+          SERVER_PID=$!
+          OK=""
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3001/health; then OK=1; break; fi
+            sleep 0.5
+          done
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+          test "$OK" = "1" || { echo "Server failed to boot or /health did not respond"; exit 1; }
