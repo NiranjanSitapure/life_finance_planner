@@ -19,11 +19,7 @@ export interface PersistApi {
 }
 
 export interface StoreLike {
-  getState: () => {
-    resetAll: () => void
-    showNominal: boolean
-    [k: string]: unknown
-  }
+  getState: () => { resetAll: () => void; showNominal: boolean }
   setState: (partial: Record<string, unknown>) => void
   persist: PersistApi
 }
