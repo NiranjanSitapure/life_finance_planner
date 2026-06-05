@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           rows,
           summary,
           scenarios: Array.isArray(config.scenarios) ? config.scenarios : [],
-          mode: config.mode ?? store.mode,
+          mode: 'simple',
           showNominal: config.showNominal ?? store.showNominal,
         })
       }

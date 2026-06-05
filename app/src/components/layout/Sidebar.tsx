@@ -32,12 +32,6 @@ export function Sidebar() {
           </div>
         )}
 
-        {summary.rothPhaseOutWarning && (
-          <div className="mx-3 mt-2 p-2 bg-yellow-900/40 border border-yellow-700 rounded text-yellow-400 text-xs">
-            ⚠ Roth phase-out applies
-          </div>
-        )}
-
         <nav className="flex-1 p-3 space-y-1 mt-2">
           {NAV.map(item => (
             <button
