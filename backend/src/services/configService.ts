@@ -85,6 +85,6 @@ export async function restoreVersion(userId: string, versionId: string) {
     where: { id: versionId, userId },
   })
   if (!version) return null
-  const snap = version.snapshot as ConfigPayload
+  const snap = version.snapshot as unknown as ConfigPayload
   return saveConfig(userId, snap)
 }

@@ -53,7 +53,7 @@ configRouter.get('/versions', requireAuth, async (req: AuthRequest, res: Respons
 // Restore a version
 configRouter.post('/versions/:id/restore', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const restored = await restoreVersion(req.userId!, req.params.id)
+    const restored = await restoreVersion(req.userId!, req.params.id as string)
     if (!restored) { res.status(404).json({ error: 'Version not found' }); return }
     res.json(restored)
   } catch {
