@@ -229,6 +229,35 @@ describe('cross-user isolation (regression bench)', () => {
     }
   })
 
+  it('restores simpleModeInputs from cloud on re-login (Basic-mode round trip)', async () => {
+    // Regression: previously loadCloudConfig wrote inputs (advanced) but not
+    // simpleModeInputs (basic), so Basic-mode users saw defaults after re-login
+    // even though the cloud had their data.
+    const { fetchFn, setUser, db } = makeFakeBackend()
+    const deps = buildDeps(fetchFn)
+
+    setUser('alice')
+    await applyAuthState(deps, 'alice')
+
+    // Simulate A having previously saved Basic-mode values to the cloud
+    db['alice'] = {
+      inputs: { salary: 444_444 } as unknown as { salary: number },
+      scenarios: [],
+      mode: 'simple',
+      showNominal: true,
+      // @ts-expect-error extending the fake row to include simpleModeInputs
+      simpleModeInputs: { currentAge: 30, retirementAge: 55, salary: 444_444, totalSavings: 99_000, lifestyle: 'comfortable' },
+    }
+
+    await loadCloudConfig(deps)
+
+    const sm = useStore.getState().simpleModeInputs
+    expect(sm.salary).toBe(444_444)
+    expect(sm.currentAge).toBe(30)
+    expect(sm.retirementAge).toBe(55)
+    expect(sm.totalSavings).toBe(99_000)
+  })
+
   it('does not preserve a previous user data into a new account when cloud is empty', async () => {
     // Direct reproduction of the original bug report
     const { fetchFn, setUser } = makeFakeBackend()

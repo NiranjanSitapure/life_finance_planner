@@ -61,6 +61,7 @@ export function clearAllAppStorage(deps: AuthSyncDeps): void {
 
 interface CloudConfig {
   inputs?: unknown
+  simpleModeInputs?: unknown
   scenarios?: unknown
   mode?: string
   showNominal?: boolean
@@ -76,13 +77,19 @@ export async function loadCloudConfig(deps: AuthSyncDeps): Promise<void> {
     if (!config?.inputs) return
     const sanitized = deps.sanitizeInputs(config.inputs)
     const { rows, summary } = deps.runProjection(sanitized)
-    deps.store.setState({
+    const patch: Record<string, unknown> = {
       inputs: sanitized,
       rows,
       summary,
       scenarios: Array.isArray(config.scenarios) ? config.scenarios : [],
       mode: 'simple',
       showNominal: config.showNominal ?? deps.store.getState().showNominal,
-    })
+    }
+    // The Basic-mode UI renders from simpleModeInputs; without restoring it,
+    // re-login shows defaults even though the cloud has the user's data.
+    if (config.simpleModeInputs && typeof config.simpleModeInputs === 'object') {
+      patch.simpleModeInputs = config.simpleModeInputs
+    }
+    deps.store.setState(patch)
   } catch { /* keep defaults */ }
 }
