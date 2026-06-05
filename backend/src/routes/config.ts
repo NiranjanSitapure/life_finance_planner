@@ -10,7 +10,7 @@ configRouter.get('/', requireAuth, async (req: AuthRequest, res: Response): Prom
   try {
     const config = await loadConfig(req.userId!)
     if (!config) { res.status(404).json({ error: 'No saved config' }); return }
-    res.json(config)h
+    res.json(config)
   } catch {
     res.status(500).json({ error: 'Failed to load config' })
   }
