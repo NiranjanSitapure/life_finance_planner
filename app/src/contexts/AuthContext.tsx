@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { useStore } from '../store/useStore'
 import { sanitizeInputs } from '../engine/validate'
 import { runProjection } from '../engine/model'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const STORE_KEY = 'life-finance-planner'
 
 export interface AuthUser {
   id: string
@@ -33,19 +34,18 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const hydratedForUserId = useRef<string | null>(null)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadCloudConfig = useCallback(async () => {
     try {
       const res = await fetch(`${API}/api/config`, { credentials: 'include' })
-      if (!res.ok) return // no saved config yet — keep localStorage data
+      if (!res.ok) return // store was reset before this call; defaults already in place
       const config = await res.json()
-      const store = useStore.getState()
       if (config.inputs) {
         const sanitized = sanitizeInputs(config.inputs)
         const { rows, summary } = runProjection(sanitized)
@@ -55,20 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           summary,
           scenarios: Array.isArray(config.scenarios) ? config.scenarios : [],
           mode: 'simple',
-          showNominal: config.showNominal ?? store.showNominal,
+          showNominal: config.showNominal ?? true,
         })
       }
-    } catch { /* stay on localStorage */ }
+    } catch { /* keep defaults */ }
   }, [])
 
-  // Check if user is already logged in on mount
+  // Check session on mount
   useEffect(() => {
     fetch(`${API}/api/auth/me`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
-      .then(data => {
+      .then(async (data: AuthUser | null) => {
         if (data) {
+          // Wipe any leftover in-memory data from a previous user/guest before loading this user's cloud config
+          useStore.getState().resetAll()
           setUser(data)
-          loadCloudConfig()
+          await loadCloudConfig()
+          hydratedForUserId.current = data.id
         }
       })
       .catch(() => {})
@@ -76,10 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadCloudConfig])
 
   const scheduleSave = useCallback(() => {
-    if (!user) return
-    if (saveTimer) clearTimeout(saveTimer)
+    if (!user || hydratedForUserId.current !== user.id) return
+    if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
-    saveTimer = setTimeout(async () => {
+    saveTimer.current = setTimeout(async () => {
       const { inputs, simpleModeInputs, scenarios, mode, showNominal } = useStore.getState()
       try {
         const res = await fetch(`${API}/api/config`, {
@@ -108,9 +111,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+    // Block any pending or future saves immediately
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null }
+    hydratedForUserId.current = null
+    try {
+      await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+    } catch { /* clear locally regardless */ }
     setUser(null)
     setSaveStatus('idle')
+    // Wipe in-memory + persisted data so the next user/guest starts clean
+    useStore.getState().resetAll()
+    try { localStorage.removeItem(STORE_KEY) } catch { /* ignore */ }
   }
 
   return (

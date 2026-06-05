@@ -38,6 +38,7 @@ interface AppState {
 
   setInputs: (inputs: Partial<ModelInputs>) => void
   resetInputs: () => void
+  resetAll: () => void
   saveScenario: (name: string) => void
   deleteScenario: (id: string) => void
   setMonteCarlo: (result: MonteCarloResult | null) => void
@@ -121,6 +122,27 @@ export const useStore = create<AppState>()(
       resetInputs: () => {
         const { rows, summary } = compute(DEFAULT_INPUTS)
         set({ inputs: DEFAULT_INPUTS, rows, summary })
+      },
+
+      resetAll: () => {
+        const { rows, summary } = compute(DEFAULT_INPUTS)
+        set({
+          inputs: DEFAULT_INPUTS,
+          rows,
+          summary,
+          scenarios: [],
+          mode: 'simple',
+          simpleModeInputs: {
+            currentAge: 28,
+            retirementAge: 65,
+            salary: 75000,
+            totalSavings: 25000,
+            lifestyle: 'comfortable',
+          },
+          showNominal: true,
+          showAdvancedWarning: false,
+          monteCarlo: null,
+        })
       },
 
       saveScenario: (name) => {
