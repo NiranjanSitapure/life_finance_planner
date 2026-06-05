@@ -11,6 +11,10 @@ import { IntermediateParameterForm } from './components/inputs/IntermediateParam
 import { OnboardingTutorial } from './components/onboarding/OnboardingTutorial'
 import { WelcomeDialog } from './components/onboarding/WelcomeDialog'
 import { exportCSV, exportJSON } from './utils/exporters'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { LoginButton } from './components/auth/LoginButton'
+import { UserMenu } from './components/auth/UserMenu'
+import { SaveStatusBadge } from './components/auth/SaveStatusBadge'
 
 // Lazy-loaded heavy components — Vite emits a separate chunk for each,
 // so recharts and the Monte Carlo engine are not in the initial bundle.
@@ -74,6 +78,12 @@ function ExportBar() {
   )
 }
 
+function AuthSection() {
+  const { user, isLoading } = useAuth()
+  if (isLoading) return <div className="w-20 h-7 bg-slate-700 rounded-lg animate-pulse" />
+  return user ? <UserMenu /> : <LoginButton />
+}
+
 function RehydrationErrorBanner() {
   const { dismissRehydrationError } = useStore()
   return (
@@ -91,7 +101,7 @@ function RehydrationErrorBanner() {
   )
 }
 
-export default function App() {
+function AppInner() {
   const { activeSection, mode, showAdvancedWarning, rehydrationError, hasSeenWelcome } = useStore()
 
   return (
@@ -108,8 +118,10 @@ export default function App() {
               <p className="text-slate-500 text-sm mt-1">Lifetime projections — all computed locally in your browser</p>
             </div>
             <div className="flex items-center gap-3">
+              <SaveStatusBadge />
               <ModeToggle />
               {mode !== 'simple' && <ExportBar />}
+              <AuthSection />
             </div>
           </div>
 
@@ -241,5 +253,13 @@ export default function App() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   )
 }
