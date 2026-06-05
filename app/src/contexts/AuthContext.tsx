@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import { useStore } from '../store/useStore'
 import { sanitizeInputs } from '../engine/validate'
+import { runProjection } from '../engine/model'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue>({
   saveStatus: 'idle',
 })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext)
 }
@@ -37,6 +39,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  const loadCloudConfig = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/config`, { credentials: 'include' })
+      if (!res.ok) return // no saved config yet — keep localStorage data
+      const config = await res.json()
+      const store = useStore.getState()
+      if (config.inputs) {
+        const sanitized = sanitizeInputs(config.inputs)
+        const { rows, summary } = runProjection(sanitized)
+        useStore.setState({
+          inputs: sanitized,
+          rows,
+          summary,
+          scenarios: Array.isArray(config.scenarios) ? config.scenarios : [],
+          mode: config.mode ?? store.mode,
+          showNominal: config.showNominal ?? store.showNominal,
+        })
+      }
+    } catch { /* stay on localStorage */ }
+  }, [])
 
   // Check if user is already logged in on mount
   useEffect(() => {
@@ -50,28 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {})
       .finally(() => setIsLoading(false))
-  }, [])
-
-  const loadCloudConfig = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/api/config`, { credentials: 'include' })
-      if (!res.ok) return // no saved config yet — keep localStorage data
-      const config = await res.json()
-      const store = useStore.getState()
-      if (config.inputs) {
-        const sanitized = sanitizeInputs(config.inputs)
-        const { rows, summary } = (await import('../engine/model')).runProjection(sanitized)
-        useStore.setState({
-          inputs: sanitized,
-          rows,
-          summary,
-          scenarios: Array.isArray(config.scenarios) ? config.scenarios : [],
-          mode: config.mode ?? store.mode,
-          showNominal: config.showNominal ?? store.showNominal,
-        })
-      }
-    } catch { /* stay on localStorage */ }
-  }, [])
+  }, [loadCloudConfig])
 
   const scheduleSave = useCallback(() => {
     if (!user) return
