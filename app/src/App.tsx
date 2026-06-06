@@ -50,30 +50,6 @@ function ExportBar() {
       >
         ↓ JSON
       </button>
-      <label className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 text-xs rounded-lg transition-colors cursor-pointer">
-        ↑ Import
-        <input
-          type="file"
-          accept=".json"
-          className="hidden"
-          onChange={e => {
-            const file = e.target.files?.[0]
-            if (!file) return
-            const reader = new FileReader()
-            reader.onload = ev => {
-              try {
-                const data = JSON.parse(ev.target?.result as string)
-                if (!data || typeof data !== 'object' || !data.inputs) {
-                  alert('Invalid file: missing "inputs" field')
-                  return
-                }
-                useStore.getState().setInputs(data.inputs)
-              } catch { alert('Invalid JSON file') }
-            }
-            reader.readAsText(file)
-          }}
-        />
-      </label>
     </div>
   )
 }
