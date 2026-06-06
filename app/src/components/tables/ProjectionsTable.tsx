@@ -27,7 +27,7 @@ export function ProjectionsTable() {
             onClick={toggleNominal}
             className="px-3 py-1.5 text-xs rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors"
           >
-            {showNominal ? 'Showing Nominal' : "Showing Real (today's $)"}
+            {showNominal ? 'Showing Nominal' : 'Showing Inflation-adjusted'}
           </button>
         </div>
         <div className="text-slate-500 text-xs">

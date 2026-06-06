@@ -84,7 +84,7 @@ export function NetWorthChart() {
               strokeDasharray="4 2"
             />
           ))}
-          <Line type="monotone" dataKey="real" name="Real (today's $)" stroke="#64748b" strokeWidth={1.5} dot={false} />
+          <Line type="monotone" dataKey="real" name="Inflation-adjusted" stroke="#64748b" strokeWidth={1.5} dot={false} />
           <Line type="monotone" dataKey="nominal" name="Nominal" stroke="#14b8a6" strokeWidth={2.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
